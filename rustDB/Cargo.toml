@@ -1,0 +1,6 @@
+[package]
+name = "rustDB"
+version = "0.1.0"
+authors = ["luckyharryji <xiangyu.ji@outlook.com>"]
+
+[dependencies]

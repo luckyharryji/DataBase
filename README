@@ -1,0 +1,9 @@
+## Rust Database 
+
+### expiremental coding for simple db in Rust
+
+#####Road Map:
+- Io
+- Key-value storage
+- in-memory to disk
+- network concurrency
