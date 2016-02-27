@@ -43,8 +43,21 @@ impl RustDB{
         Ok(buf)
     }
 
-    pub fn get<S: Into<Vec<u8>>>(&self, key: S)->Option<Vec<u8>>{
+    pub fn get<K: Into<Vec<u8>>>(&self, key: K)->Option<Vec<u8>>{
         let lock_data = self.records.lock().unwrap();
         lock_data.get(&key.into()).map(|value| value.clone())
+    }
+
+    pub fn put<K: Into<Vec<u8>>, V: Into<Vec<u8>>>(&mut self, key: K, value: V){
+        let mut lock_to_write = self.records.lock().unwrap();
+        lock_to_write.insert(key.into(),value.into());
+    }
+
+    pub fn delete<K: Into<Vec<u8>>>(&self, key: K) -> Result<Vec<u8>, &'static str> {
+        let mut lock_to_delete = self.records.lock().unwrap();
+        match lock_to_delete.remove(&key.into()) {
+            Some(value) => return Ok(value),
+            None => return Err("Key does not exists"),
+        }
     }
 }
