@@ -1,6 +1,30 @@
+use std::fs::OpenOptions;
+use std::sync::Arc;
+use std::borrow::Cow;
+use std::thread;
+
 fn main() {
-    println!("Hello, world!");
+    let mut db = RustDB::open("testdb").unwrap();
+    let rc = Arc::new(db);
+
+    let mut handles = vec![];
+    for i in 0..3 {
+        let mut db = rc.clone();
+        handles.push(thread::spawn(move || {
+            assert!(db.get("test").is_none());
+            db.put("test", "hello");
+            assert!(db.get("test").unwrap() == b"hello");
+            db.delete("test");
+            assert!(db.get("test").is_none());
+            println!("pass");
+        }));
+    }
+
+    for handle in handles {
+        handle.join();
+    }
 }
+
 
 
 use std::fs;
@@ -9,7 +33,7 @@ use std::io;
 use std::io::Error;
 use std::path::{Path,PathBuf};
 use std::env;
-use std::sync::{Arc,Mutex};
+use std::sync::Mutex;
 
 // key-value structure goes here
 type DatabaseCollection = HashMap<Vec<u8>, Vec<u8>>;
@@ -48,7 +72,7 @@ impl RustDB{
         lock_data.get(&key.into()).map(|value| value.clone())
     }
 
-    pub fn put<K: Into<Vec<u8>>, V: Into<Vec<u8>>>(&mut self, key: K, value: V){
+    pub fn put<K: Into<Vec<u8>>, V: Into<Vec<u8>>>(&self, key: K, value: V){
         let mut lock_to_write = self.records.lock().unwrap();
         lock_to_write.insert(key.into(),value.into());
     }
