@@ -12,13 +12,7 @@ use std::env;
 use std::sync::{Arc,Mutex};
 
 // key-value structure goes here
-type Item = HashMap<Vec<u8>, Vec<u8>>;
-
-// could add more attribute features, so pack it into a strcut
-struct DatabaseCollection {
-    data_item: Item,
-}
-
+type DatabaseCollection = HashMap<Vec<u8>, Vec<u8>>;
 type Records = Arc<Mutex<DatabaseCollection>>;
 
 pub struct RustDB {
@@ -35,9 +29,7 @@ impl RustDB{
         assert!(fs::metadata(path.as_path()).unwrap().is_dir());
         let database = RustDB {
             records: Arc::new(Mutex::new(
-            	DatabaseCollection{ 
-            		data_item: Item::new(),
-            	}
+                DatabaseCollection::new()
             )),
         };
         Ok(database)
@@ -49,5 +41,10 @@ impl RustDB{
         try!(fs::create_dir_all(buf.as_path()));
         // leave retrive for later coding
         Ok(buf)
+    }
+
+    pub fn get<S: Into<Vec<u8>>>(&self, key: S)->Option<Vec<u8>>{
+        let lock_data = self.records.lock().unwrap();
+        lock_data.get(&key.into()).map(|value| value.clone())
     }
 }
