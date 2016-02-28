@@ -1,20 +1,20 @@
-use std::fs::OpenOptions;
 use std::sync::Arc;
-use std::borrow::Cow;
 use std::thread;
 
 fn main() {
-    let mut db = RustDB::open("testdb").unwrap();
+    let db = RustDB::open("testdb").unwrap();
     let rc = Arc::new(db);
 
     let mut handles = vec![];
-    for i in 0..3 {
-        let mut db = rc.clone();
+    for _ in 0..3 {
+        let db = rc.clone();
         handles.push(thread::spawn(move || {
             assert!(db.get("test").is_none());
             db.put("test", "hello");
             assert!(db.get("test").unwrap() == b"hello");
-            db.delete("test");
+            db.put("test", "test change");
+            assert!(db.get("test").unwrap() == b"test change");
+            assert!(db.delete("test") == Ok("test change".as_bytes().to_owned()));
             assert!(db.get("test").is_none());
             println!("pass");
         }));
