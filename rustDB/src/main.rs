@@ -1,87 +1,55 @@
-use std::sync::Arc;
+use std::net::{TcpListener,TcpStream};
 use std::thread;
+use std::sync::{Arc,Mutex};
+use std::fs::OpenOptions;
+
+extern crate time;  // import for record time for log
+
+pub mod lib;
+
+mod response;
+
+mod request;
+use request::Request;
+
 
 fn main() {
-    let db = RustDB::open("testdb").unwrap();
-    let rc = Arc::new(db);
-
-    let mut handles = vec![];
-    for _ in 0..3 {
-        let db = rc.clone();
-        handles.push(thread::spawn(move || {
-            assert!(db.get("test").is_none());
-            db.put("test", "hello");
-            assert!(db.get("test").unwrap() == b"hello");
-            db.put("test", "test change");
-            assert!(db.get("test").unwrap() == b"test change");
-            assert!(db.delete("test") == Ok("test change".as_bytes().to_owned()));
-            assert!(db.get("test").is_none());
-            println!("pass");
-        }));
-    }
-
-    for handle in handles {
-        handle.join();
-    }
+	initial_bind_server(8080);
 }
 
 
+fn handle_stream(stream:TcpStream,write_log_file: &Arc<Mutex<OpenOptions>>){
+	let request_time = time::now().ctime().to_string();    // record time when request come
+	let mut request = Request::new(stream);				   // parse the request, extract url and all requet info
+	request.record_log(&request_time,write_log_file);					   // write request info into log
 
-use std::fs;
-use std::collections::HashMap;
-use std::io;
-use std::io::Error;
-use std::path::{Path,PathBuf};
-use std::env;
-use std::sync::Mutex;
-
-// key-value structure goes here
-type DatabaseCollection = HashMap<Vec<u8>, Vec<u8>>;
-type Records = Arc<Mutex<DatabaseCollection>>;
-
-pub struct RustDB {
-    records: Records,
+	// let mut response = request.get_response();			   // create response structure from request information
+	// let reponse_code = response.write_response();		   // send back response to the client
+	// let response_time = time::now().ctime().to_string();   // record time when send out response
+	// response.record_log(&response_time, reponse_code,write_log_file);     // write request info into log
 }
 
-// did not write physical disk load and storage yet
-impl RustDB{
-    pub fn open<P: AsRef<Path>>(path: P) -> Result<RustDB, Error> {
-        Self::check_path(path).and_then(Self::create_db)
-    }
 
-    fn create_db(path: PathBuf) -> Result<RustDB, Error> {
-        assert!(fs::metadata(path.as_path()).unwrap().is_dir());
-        let database = RustDB {
-            records: Arc::new(Mutex::new(
-                DatabaseCollection::new()
-            )),
-        };
-        Ok(database)
-    }
+fn initial_bind_server(port:usize){
+	// bing server to the localhost
+	let bind_addr:&str = &("127.0.0.1:".to_owned()+&port.to_string());
+    let listener = TcpListener::bind(bind_addr).unwrap();
+    println!("Server Started");
 
-    fn check_path<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
-        let mut buf = try!(env::current_dir());
-        buf = buf.join(path);
-        try!(fs::create_dir_all(buf.as_path()));
-        // leave retrive for later coding
-        Ok(buf)
+    let file_for_log = Arc::new(Mutex::new(OpenOptions::new()));
+    for stream in listener.incoming() {
+    	let log_file_for_write = file_for_log.clone();
+		match stream{
+			Ok(stream)=>{  				
+				thread::spawn(move || {  // spawn a thread for each request 
+					handle_stream(stream,&log_file_for_write);
+				});
+			},
+			Err(_)=>{
+				println!("Reques Stream Error");
+			}
+		}
     }
-
-    pub fn get<K: Into<Vec<u8>>>(&self, key: K)->Option<Vec<u8>>{
-        let lock_data = self.records.lock().unwrap();
-        lock_data.get(&key.into()).map(|value| value.clone())
-    }
-
-    pub fn put<K: Into<Vec<u8>>, V: Into<Vec<u8>>>(&self, key: K, value: V){
-        let mut lock_to_write = self.records.lock().unwrap();
-        lock_to_write.insert(key.into(),value.into());
-    }
-
-    pub fn delete<K: Into<Vec<u8>>>(&self, key: K) -> Result<Vec<u8>, &'static str> {
-        let mut lock_to_delete = self.records.lock().unwrap();
-        match lock_to_delete.remove(&key.into()) {
-            Some(value) => return Ok(value),
-            None => return Err("Key does not exists"),
-        }
-    }
+    // close server
+    drop(listener);
 }
