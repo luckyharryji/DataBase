@@ -49,7 +49,21 @@ impl Request{
 		// 	read_stream_info.clear();
 		// }
 
+		/*
+		parse the database manipulation type with the command type
+			PUT: update data item
+			POST: insert new value
+			GET: retrive the data item
+			DELETE: delete one item in database
+		*/
 		let command_type = http_info[0];
+		match command_type {
+		    "PUT"=>println!("Call Database Update Function"),
+		    "POST"=>println!("Call insert function"),
+		    "GET"=>println!("Call find function"),
+		    "DELETE"=>println!("Call delete function"),
+		    _=>println!("Unsupported manipulation"),
+		}
 		let command_data = http_info[1];
 
 		let file_source = http_info[1];					// source of the request file
