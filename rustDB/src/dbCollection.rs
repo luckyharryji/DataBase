@@ -1,9 +1,9 @@
-use std::sync::{Arc,Mutex}
+use std::sync::{Arc,Mutex};
 use std::collections::{LinkedList,HashMap, BtreeSet};
 use std::thread;
 use std::fmt::{Display};
 
-pub type TableEntry = HashMap<String, String>,
+pub type TableEntry = HashMap<String, String>;
 pub type Set<K> = BtreeSet<K>;
 
 pub struct ItemNode {
