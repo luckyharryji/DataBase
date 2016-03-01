@@ -6,6 +6,7 @@ use std::fs::OpenOptions;
 extern crate time;  // import for record time for log
 
 pub mod lib;
+mod dbCollection;
 
 mod response;
 
