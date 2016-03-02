@@ -1,10 +1,10 @@
 use std::sync::{Arc,Mutex};
-use std::collections::{LinkedList,HashMap, BtreeSet};
+use std::collections::{LinkedList,HashMap, BTreeSet};
 use std::thread;
 use std::fmt::{Display};
 
 pub type TableEntry = HashMap<String, String>;
-pub type Set<K> = BtreeSet<K>;
+pub type Set<K> = BTreeSet<K>;
 
 pub struct ItemNode {
 	valid: bool,
@@ -39,7 +39,6 @@ impl ItemNode {
 
 
 	pub fn matched(&self, template: &TableEntry) -> bool{
-		
 		for key in template.keys() {
 			if self.content.get(key) != template.get(key){
 				return false;
@@ -49,7 +48,7 @@ impl ItemNode {
 	}
 
 
-	fn modify(&mut self, template: &TableEntry) {
+	pub fn modify(&mut self, template: &TableEntry) {
 		for key in template.keys() {
 			let val = self.content.entry(key.clone()).or_insert("".to_owned());
 			*val = template.get(key).unwrap().clone();
@@ -58,7 +57,7 @@ impl ItemNode {
 }
 
 
-pub type EntryList = LinkedList<Arc<Mutex<Box<ItemNode>>>>;
+pub type EntryList = Vec<Box<ItemNode>>;
 
 
 pub struct Collection{
@@ -84,31 +83,60 @@ impl Collection{
 	}
 
 
-
-
-	pub fn update(&mut self, target: &TableEntry, updated: &TableEntry) -> Option<usize>{
-		if !self.is_valid(target) || self.is_valid(updated) {
-			None
-		} else {
-
-			let mut count = 0;
-			let mut it = self.entries.iter();
-			while let Some(ref item) = it.next() {
-				let peek = item.into_inner().unwrap();
-				if peek.matched(target){
-					let shared_item = item.clone();
-					let mut node = shared_item.lock().unwrap();
-					if node.is_valid() {
-						node.modify(updated);
-						count += 1;
-					}
-
-				}
-			}
-
-			Some(count)
+	pub fn insert(&mut self, desired: &TableEntry){
+		if self.is_valid(desired) {
+			self.entries.push(ItemNode::new(desired));
 		}
-
 	}
 
+
+	pub fn update(&mut self, target: &TableEntry, desired: &TableEntry) -> Option<usize>{
+		if !self.is_valid(target) || !self.is_valid(desired) {
+			None
+		} else {
+			let mut count = 0;
+			for item in &self.entries{
+				if item.matched(target) {
+					item.modify(desired);
+					count += 1;
+				}
+			}
+			Some(count)
+		}
+	}
+
+	pub fn find(&self, target: &TableEntry) -> Option<Vec<TableEntry>> {
+		if !self.is_valid(target){
+			None
+		} else {
+			let mut res: Vec<TableEntry> = Vec::new();	
+			for item in &self.entries{
+				if item.matched(target) {
+					res.push(item.content.clone())
+				}
+			}
+			Some(res)
+		}
+	}
+
+
+	pub fn delete(&mut self, target: &TableEntry) -> Option<usize>{
+		if !self.is_valid(target){
+			None
+		} else {
+			let mut count = 0;
+			let mut index = 0;
+
+			while index < self.entries.len() {
+				let item = &self.entries[index];
+				if (*item).matched(target) {
+					self.entries.remove(index);
+					count += 1;
+				} else {
+					index += 1;
+				}
+			}
+			Some(count)
+		}
+	}
 }

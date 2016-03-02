@@ -4,15 +4,13 @@ use std::sync::{Arc,Mutex};
 use std::fs::OpenOptions;
 
 extern crate time;  // import for record time for log
-
 pub mod lib;
-mod dbCollection;
+mod vecDBCollection;
 
 mod response;
 
 mod request;
 use request::Request;
-
 
 fn main() {
 	initial_bind_server(8080);
