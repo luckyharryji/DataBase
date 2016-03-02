@@ -3,6 +3,8 @@ use std::sync::Arc;
 use std::borrow::Cow;
 use std::thread;
 
+mod dbCollection;
+
 fn main() {
     let mut db = RustDB::open("testdb").unwrap();
     let rc = Arc::new(db);
