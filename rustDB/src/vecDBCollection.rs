@@ -145,6 +145,24 @@ impl Collection{
 }
 
 
+impl PartialEq for Collection {
+    fn eq(&self, other: &Self) -> bool {
+		for key in &other.fields {
+			if !self.fields.contains(key){
+				return false;
+    		}
+		}
+    	for key in &self.fields {
+    		if !other.fields.contains(key){
+    			return false;
+    		}
+		}
+		true
+    }
+}
+
+
+
 mod itemnode_tests {
     use super::{ItemNode, TableEntry};
 
