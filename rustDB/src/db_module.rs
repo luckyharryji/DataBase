@@ -85,6 +85,14 @@ mod database_test{
         assert!(db.delete_cl("student").is_ok());
         assert!(!db.delete_cl("student").is_ok());
     }
+    #[test]
+    fn create_table_after_deletion() {
+        let mut db = RustDB::new();
+        let student_fields = new_student_fields();
+        db.create_table("student",&student_fields);
+        db.delete_cl("student");
+        assert!(db.create_table("student",&student_fields).is_ok());
+    }
     fn new_student_fields()->Set<String>{
         let mut fields: Set<String> = Set::new();
         fields.insert("id".to_owned());
