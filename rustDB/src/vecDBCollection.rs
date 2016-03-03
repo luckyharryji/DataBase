@@ -6,6 +6,7 @@ use std::fmt::{Display};
 pub type TableEntry = HashMap<String, String>;
 pub type Set<K> = BTreeSet<K>;
 
+#[derive(Debug)]
 pub struct ItemNode {
 	valid: bool,
 	content: TableEntry,
@@ -56,65 +57,9 @@ impl ItemNode {
 	}
 }
 
-
-mod itemnode_tests {
-    use super::{ItemNode, TableEntry};
-
-    #[test]
-    fn node_validate_test() {
-    	let mut node = ItemNode::new(&new_table_entry(0, "Ada", 24));
-    	assert!(node.is_valid());
-    	node.set_valid(false);
-    	assert!(!node.is_valid());
-    }
-        
-    #[test]
-    fn node_matches_test() {
-
-    	let mut node = ItemNode::new(&new_table_entry(0, "Ada", 24));
-    	assert!(node.is_valid());
-
-    	let mut matched = new_table_entry(0, "Ada", 24);
-    	assert!(node.matched(&matched));
-    	matched.remove(&String::from("age"));
-    	assert!(node.matched(&matched));
-
-    	
-    	let mut non_matched = new_table_entry(0, "Joey", 24);
-    	assert!(!node.matched(&non_matched));
-    	non_matched.insert("name".to_owned(), "Ada".to_owned());
-    	non_matched.insert("sex".to_owned(), "female".to_owned());
-    	assert!(!node.matched(&non_matched));
-
-    }
-
-
-    #[test]
-    fn node_modify_test() {
-
-    	let mut node = ItemNode::new(&new_table_entry(0, "Ada", 24));
-
-    	let mut matched = new_table_entry(0, "Ada", 24);
-    	assert_eq!(node.content, matched);
-    	
-    	let mut non_matched = new_table_entry(0, "Joey", 24);
-    	node.modify(&non_matched);
-    	assert_eq!(node.content, non_matched);
-    }
-
-    fn new_table_entry(id: usize, name: &str, age: usize) -> TableEntry{
-    	let mut entry = TableEntry::new();
-    	entry.insert("id".to_owned(), id.to_string());
-    	entry.insert("name".to_owned(), name.to_string());
-    	entry.insert("age".to_owned(), age.to_string());
-    	entry
-    }
-}
-
-
 pub type EntryList = Vec<Box<ItemNode>>;
 
-
+#[derive(Debug)]
 pub struct Collection{
 	fields: Set<String>,
 	entries: EntryList,
@@ -197,6 +142,61 @@ impl Collection{
 			Some(count)
 		}
 	}
+}
+
+
+mod itemnode_tests {
+    use super::{ItemNode, TableEntry};
+
+    #[test]
+    fn node_validate_test() {
+    	let mut node = ItemNode::new(&new_table_entry(0, "Ada", 24));
+    	assert!(node.is_valid());
+    	node.set_valid(false);
+    	assert!(!node.is_valid());
+    }
+        
+    #[test]
+    fn node_matches_test() {
+
+    	let mut node = ItemNode::new(&new_table_entry(0, "Ada", 24));
+    	assert!(node.is_valid());
+
+    	let mut matched = new_table_entry(0, "Ada", 24);
+    	assert!(node.matched(&matched));
+    	matched.remove(&String::from("age"));
+    	assert!(node.matched(&matched));
+
+    	
+    	let mut non_matched = new_table_entry(0, "Joey", 24);
+    	assert!(!node.matched(&non_matched));
+    	non_matched.insert("name".to_owned(), "Ada".to_owned());
+    	non_matched.insert("sex".to_owned(), "female".to_owned());
+    	assert!(!node.matched(&non_matched));
+
+    }
+
+
+    #[test]
+    fn node_modify_test() {
+
+    	let mut node = ItemNode::new(&new_table_entry(0, "Ada", 24));
+
+    	let mut matched = new_table_entry(0, "Ada", 24);
+    	assert_eq!(node.content, matched);
+    	
+    	let mut non_matched = new_table_entry(0, "Joey", 24);
+    	node.modify(&non_matched);
+    	assert_eq!(node.content, non_matched);
+    }
+
+    fn new_table_entry(id: usize, name: &str, age: usize) -> TableEntry{
+    	let mut entry = TableEntry::new();
+    	entry.insert("id".to_owned(), id.to_string());
+    	entry.insert("name".to_owned(), name.to_string());
+    	entry.insert("age".to_owned(), age.to_string());
+    	entry
+    }
 }
 
 
