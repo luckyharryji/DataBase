@@ -42,7 +42,7 @@ impl RustDB {
 
 mod database_test{
     use super::{RustDB,Set};
-    use vecDBCollection::Collection;
+    use vecDBCollection::{Collection,TableEntry};
 
     #[test]
     fn create_table_test(){
@@ -52,6 +52,8 @@ mod database_test{
         let create_result = db.create_table("student",&fields);
         assert!(create_result.is_ok());
         assert_eq!(&collection_for_test,create_result.unwrap());
+        let mut result_collection = create_result.unwrap();
+        result_collection.insert(&new_sort_entry(0, "Ada", 24));
     }
 
     #[test]
@@ -69,6 +71,14 @@ mod database_test{
         fields.insert("name".to_owned());
         fields.insert("age".to_owned());
         fields
+    }
+
+    fn new_sort_entry(id: usize, name: &str, age: usize) -> TableEntry{
+        let mut entry = TableEntry::new();
+        entry.insert("id".to_owned(), id.to_string());
+        entry.insert("name".to_owned(), name.to_owned());
+        entry.insert("age".to_owned(), age.to_string());
+        entry
     }
 }
 
