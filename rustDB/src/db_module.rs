@@ -39,3 +39,36 @@ impl RustDB {
     }  
 }
 
+
+mod database_test{
+    use super::{RustDB,Set};
+    use vecDBCollection::Collection;
+
+    #[test]
+    fn create_table_test(){
+        let mut db = RustDB::new();
+        let fields = new_fileds();
+        let collection_for_test = Collection::new(&fields);
+        let create_result = db.create_table("student",&fields);
+        assert!(create_result.is_ok());
+        assert_eq!(&collection_for_test,create_result.unwrap());
+    }
+
+    #[test]
+    fn find_cl_test(){
+        let mut db = RustDB::new();
+        let fields = new_fileds();
+        assert!(db.create_table("student",&fields).is_ok());
+        assert!(db.find_cl("student").is_ok());
+        assert!(!db.find_cl("teacher").is_ok());
+    }
+
+    fn new_fileds()->Set<String>{
+        let mut fields: Set<String> = Set::new();
+        fields.insert("id".to_owned());
+        fields.insert("name".to_owned());
+        fields.insert("age".to_owned());
+        fields
+    }
+}
+
