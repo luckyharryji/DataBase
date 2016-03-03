@@ -27,7 +27,7 @@ impl RustDB {
         self.collections.insert(cl_name.to_owned(),cl);
         match self.collections.get_mut(cl_name){
             Some(col) =>Ok(col),
-            None => Err("Database inser error"),
+            None => Err("Database insert error"),
         }
     }
 
@@ -39,11 +39,15 @@ impl RustDB {
     }
 
     fn delete_cl(&mut self, cl_name: &str) -> Result<&'static str, &'static str>{
-        if !self.collections.contains_key(cl_name){
-            return Err("Collection does not exist.");
+        match self.collections.contains_key(cl_name) {
+            true => {
+                self.collections.remove(cl_name);
+                return Ok("Collection has been deleted");
+            }
+            false => {
+                return Err("Collection does not exist.");
+            }
         }
-        self.collections.remove(cl_name);
-        Ok("Collection has been deleted")
     }
 
     fn get_collections(&mut self) -> Vec<&str>{
