@@ -19,24 +19,24 @@ impl RustDB {
         }
     }
 
-    fn create_table(&mut self, cl_name: &str, fields: &Set<String>)->Result<&Collection,&'static str>{
+    fn create_table(&mut self, cl_name: &str, fields: &Set<String>)->Result<&mut Collection,&'static str>{
         if self.collections.contains_key(cl_name){
             return Err("Collection name already exists.");
         }
-        let cl = Collection::new(&fields);
+        let mut cl = Collection::new(&fields);
         self.collections.insert(cl_name.to_owned(),cl);
-        match self.collections.get(cl_name){
+        match self.collections.get_mut(cl_name){
             Some(col) =>Ok(col),
             None => Err("Database inser error"),
         }
     }
 
-    fn find_cl(&self, cl_name: &str) -> Result<&Collection,&'static str>{
-        match self.collections.get(cl_name) {
+    fn find_cl(&self, cl_name: &str) -> Result<&mut Collection,&'static str>{
+        match self.collections.get_mut(cl_name) {
             Some(col) => Ok(col),
             None => Err("Collection name does not exists"),
         }
-    }  
+    }
 }
 
 
@@ -81,4 +81,3 @@ mod database_test{
         entry
     }
 }
-
