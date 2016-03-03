@@ -47,7 +47,7 @@ mod database_test{
     #[test]
     fn create_table_test(){
         let mut db = RustDB::new();
-        let fields = new_fileds();
+        let fields = new_student_fields();
         let collection_for_test = Collection::new(&fields);
         let create_result = db.create_table("student",&fields);
         assert!(create_result.is_ok());
@@ -57,17 +57,30 @@ mod database_test{
     #[test]
     fn find_cl_test(){
         let mut db = RustDB::new();
-        let fields = new_fileds();
+        let fields = new_student_fields();
         assert!(db.create_table("student",&fields).is_ok());
         assert!(db.find_cl("student").is_ok());
         assert!(!db.find_cl("teacher").is_ok());
     }
-
-    fn new_fileds()->Set<String>{
+    #[test]
+    fn create_table_when_table_exists() {
+        let mut db = RustDB::new();
+        let student_fields = new_student_fields();
+        let other_fields = new_other_fields();
+        assert!(db.create_table("student",&student_fields).is_ok());
+        assert!(!db.create_table("student",&other_fields).is_ok());
+    }
+    fn new_student_fields()->Set<String>{
         let mut fields: Set<String> = Set::new();
         fields.insert("id".to_owned());
         fields.insert("name".to_owned());
         fields.insert("age".to_owned());
+        fields
+    }
+    fn new_other_fields()->Set<String>{
+        let mut fields: Set<String> = Set::new();
+        fields.insert("id".to_owned());
+        fields.insert("sex".to_owned());
         fields
     }
 }
