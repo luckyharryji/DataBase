@@ -37,6 +37,7 @@ impl RustDB {
             None => Err("Collection name does not exist."),
         }
     }
+
     fn delete_cl(&mut self, cl_name: &str) -> Result<&'static str, &'static str>{
         if !self.collections.contains_key(cl_name){
             return Err("Collection does not exist.");
@@ -44,6 +45,15 @@ impl RustDB {
         self.collections.remove(cl_name);
         Ok("Collection has been deleted")
     }
+
+    fn get_collections(&mut self) -> Vec<&str>{
+        let mut cls: Vec<&str> = Vec::new();
+        for key in self.collections.keys(){
+            cls.push(key);
+        }
+        cls
+    }
+
 }
 
 
@@ -92,6 +102,15 @@ mod database_test{
         db.create_table("student",&student_fields);
         db.delete_cl("student");
         assert!(db.create_table("student",&student_fields).is_ok());
+    }
+    #[test]
+    fn get_cls_test() {
+        let mut db = RustDB::new();
+        let student_fields = new_student_fields();
+        let other_fields = new_other_fields();
+        db.create_table("student",&student_fields);
+        db.create_table("other",&other_fields);
+        assert_eq!(db.get_collections(), vec!["student","other"]);
     }
     fn new_student_fields()->Set<String>{
         let mut fields: Set<String> = Set::new();
