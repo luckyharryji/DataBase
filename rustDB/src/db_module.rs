@@ -31,7 +31,7 @@ impl RustDB {
         }
     }
 
-    fn find_cl(&self, cl_name: &str) -> Result<&mut Collection,&'static str>{
+    fn find_cl(&mut self, cl_name: &str) -> Result<&mut Collection,&'static str>{
         match self.collections.get_mut(cl_name) {
             Some(col) => Ok(col),
             None => Err("Collection name does not exists"),
@@ -52,8 +52,6 @@ mod database_test{
         let create_result = db.create_table("student",&fields);
         assert!(create_result.is_ok());
         assert_eq!(&collection_for_test,create_result.unwrap());
-        let mut result_collection = create_result.unwrap();
-        result_collection.insert(&new_sort_entry(0, "Ada", 24));
     }
 
     #[test]
