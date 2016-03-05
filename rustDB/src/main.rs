@@ -21,7 +21,8 @@ fn main() {
 fn handle_stream(stream:TcpStream,write_log_file: &Arc<Mutex<OpenOptions>>, database_obj:&mut Arc<Mutex<RustDB>>){
 	let request_time = time::now().ctime().to_string();    // record time when request come
 	let mut request = Request::new(stream);				   // parse the request, extract url and all requet info
-	request.record_log(&request_time,write_log_file);					   // write request info into log
+	request.is_valid();
+	// request.record_log(&request_time,write_log_file);					   // write request info into log
 
 	// let mut response = request.get_response();			   // create response structure from request information
 	// let reponse_code = response.write_response();		   // send back response to the client

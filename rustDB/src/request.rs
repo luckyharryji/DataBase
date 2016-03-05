@@ -5,6 +5,7 @@ use std::io::ErrorKind;
 use std::path::Path;
 use std::fs::OpenOptions;
 use std::sync::{Arc,Mutex};
+use std::convert::AsRef;
 
 use response::Response;
 use lib::{get_file_content,write_into_file};
@@ -12,9 +13,11 @@ use lib::{get_file_content,write_into_file};
 // defind request structure
 pub struct Request{
 	url: String,
-	stream:TcpStream,
-	request_info:String,
-	not_find_page:String,
+	stream: TcpStream,
+	command: String,
+	request_info: String,
+	request_parameter: Vec<String>,
+	not_find_page: String,
 }
 
 
@@ -56,15 +59,17 @@ impl Request{
 			GET: retrive the data item
 			DELETE: delete one item in database
 		*/
-		let command_type = http_info[0];
-		match command_type {
-		    "PUT"=>println!("Call Database Update Function"),
-		    "POST"=>println!("Call insert function"),
-		    "GET"=>println!("Call find function"),
-		    "DELETE"=>println!("Call delete function"),
-		    _=>println!("Unsupported manipulation"),
+		let command = http_info[0].to_owned();
+
+		// get the parameter of the request
+		let mut parameter = Vec::new();
+		for index in 1..http_info.len(){
+			parameter.push(http_info[index].to_owned());
 		}
-		let command_data = http_info[1];
+
+
+
+		println!("{}", parameter.len());
 
 		let file_source = http_info[1];					// source of the request file
 		stream = http_reader.into_inner();
@@ -73,8 +78,10 @@ impl Request{
 
 		Request{
 			url: file_addr,
-			stream:stream,
-			request_info:log_request_info,
+			stream: stream,
+			command: command,
+			request_info: log_request_info,
+			request_parameter: parameter,
 			not_find_page: ".//404.html".to_owned(),
 		}
 	}
@@ -89,6 +96,7 @@ impl Request{
 		}
 	}
 
+
 	// API to call for create response
 	pub fn get_response(&mut self)->Response{
 		self.process_url()
@@ -96,6 +104,45 @@ impl Request{
 
 	
 	/**private function**/
+
+	/**
+	Accepted: parameter: 
+	PUT
+	Arguments: Key, Value
+	Purpose: Insert a new entry into the data store
+
+	GET
+	Arguments: Key
+	Purpose: Retrieve a stored value from the data store
+
+	PUTLIST
+	Arguments: Key, Value
+	Purpose: Insert a new list entry into the data store
+
+	GETLIST
+	Arguments: Key
+	Purpose: Retrieve a stored list from the data store
+
+	APPEND
+	Arguments: Key, Value
+	Purpose: Add an element to an existing list in the data store
+
+	DELETE
+	Arguments: Key
+	Purpose: Delete an entry from the data store
+	**/
+
+	pub fn is_valid(&self)->bool{
+		match self.command.as_ref(){
+		    "PUT" => println!("Call Database Update Function"),
+		    "POST" => println!("Call insert function"),
+		    "GET" => println!("Call find function"),
+		    "DELETE" => println!("Call delete function"),
+		    _ =>println!("Unsupported manipulation"),
+		}
+		true
+	}
+
 	// parse url in the reqeust
 	// end with / means it could request for content inside a folder
 	fn process_url(&mut self)->Response{
