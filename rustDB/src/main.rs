@@ -7,6 +7,7 @@ extern crate time;  // import for record time for log
 pub mod lib;
 mod vecDBCollection;
 mod db_module;
+use db_module::RustDB;
 mod response;
 
 mod request;
@@ -17,7 +18,7 @@ fn main() {
 }
 
 
-fn handle_stream(stream:TcpStream,write_log_file: &Arc<Mutex<OpenOptions>>){
+fn handle_stream(stream:TcpStream,write_log_file: &Arc<Mutex<OpenOptions>>, database_obj:&mut Arc<Mutex<RustDB>>){
 	let request_time = time::now().ctime().to_string();    // record time when request come
 	let mut request = Request::new(stream);				   // parse the request, extract url and all requet info
 	request.record_log(&request_time,write_log_file);					   // write request info into log
@@ -35,13 +36,17 @@ fn initial_bind_server(port:usize){
     let listener = TcpListener::bind(bind_addr).unwrap();
     println!("Server Started");
 
+    // new database object initial here 
+    // read data from in-disk
+    let new_database = Arc::new(Mutex::new(RustDB::new()));
     let file_for_log = Arc::new(Mutex::new(OpenOptions::new()));
     for stream in listener.incoming() {
     	let log_file_for_write = file_for_log.clone();
+    	let mut database_obj = new_database.clone();
 		match stream{
 			Ok(stream)=>{  				
 				thread::spawn(move || {  // spawn a thread for each request 
-					handle_stream(stream,&log_file_for_write);
+					handle_stream(stream,&log_file_for_write,&mut database_obj);
 				});
 			},
 			Err(_)=>{
