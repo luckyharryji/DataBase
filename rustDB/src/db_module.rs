@@ -44,7 +44,7 @@ impl RustDB {
         }
     }
 
-    fn delete_cl(&mut self, cl_name: &str) -> Result<&'static str, &'static str>{
+    pub fn delete_cl(&mut self, cl_name: &str) -> Result<&'static str, &'static str>{
         match self.collections.contains_key(cl_name) {
             true => {
                 self.collections.remove(cl_name);

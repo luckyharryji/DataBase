@@ -20,7 +20,7 @@ fn main() {
 }
 
 
-fn handle_stream(stream:TcpStream,write_log_file: &Arc<Mutex<OpenOptions>>, database_obj:&mut Arc<Mutex<RustDB>>){
+fn handle_stream(stream:TcpStream,write_log_file: Arc<Mutex<OpenOptions>>, database_obj:&mut Arc<Mutex<RustDB>>){
 	let request_time = time::now().ctime().to_string();    // record time when request come
 	let mut request = Request::new(stream);				   // parse the request, extract url and all requet info
 	request.is_valid();
@@ -28,6 +28,12 @@ fn handle_stream(stream:TcpStream,write_log_file: &Arc<Mutex<OpenOptions>>, data
 	match request.get_command().as_ref(){
 		"PUTLIST" => {
 			let mut table = on_database.create_table(&request.get_collection(), &request.get_parameters());
+		},
+		"DELETELIST" => {
+			match on_database.delete_cl(&request.get_collection()){
+				Ok(s) => println!("{}" ,s),
+				Err(err) => println!("{}", err),
+			}
 		},
 		_ => println!("Not Finish Yet"),
 	}
@@ -56,7 +62,7 @@ fn initial_bind_server(port:usize){
 		match stream{
 			Ok(stream)=>{  				
 				thread::spawn(move || {  // spawn a thread for each request 
-					handle_stream(stream,&log_file_for_write,&mut database_obj);
+					handle_stream(stream,log_file_for_write,&mut database_obj);
 				});
 			},
 			Err(_)=>{

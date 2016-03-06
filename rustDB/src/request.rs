@@ -7,10 +7,11 @@
 		Arguments: Key Attribute
 		Purpose: Insert a new list entry into the data store
 
-	Not Yet:
 		DELETELIST
 		Arguments: Key
 		Purpose: Delete an entry from the data store
+
+	Not Yet:
 
 		PUT
 		Arguments: Key, Value
