@@ -2,6 +2,16 @@
 	
 	Accepted: parameter: 
 	/**
+	Done:
+		PUTLIST
+		Arguments: Key Attribute
+		Purpose: Insert a new list entry into the data store
+
+	Not Yet:
+		DELETELIST
+		Arguments: Key
+		Purpose: Delete an entry from the data store
+
 		PUT
 		Arguments: Key, Value
 		Purpose: Insert a new entry into the data store
@@ -10,10 +20,6 @@
 		Arguments: Key
 		Purpose: Retrieve a stored value from the data store
 
-		PUTLIST
-		Arguments: Key Attribute
-		Purpose: Insert a new list entry into the data store
-
 		GETLIST
 		Arguments: Key
 		Purpose: Retrieve a stored list from the data store
@@ -21,10 +27,6 @@
 		APPEND
 		Arguments: Key, Value
 		Purpose: Add an element to an existing list in the data store
-
-		DELETE
-		Arguments: Key
-		Purpose: Delete an entry from the data store
 	**/
 "]
 
@@ -76,22 +78,6 @@ impl Request{
 		log_request_info.push_str(&header);
 
 
-		// get object collections
-		let mut col_name = String::new();
-		let mut col_read = String::new();
-		match http_reader.read_line(&mut col_read).unwrap()>0{
-			true=> {
-				col_name = col_read.clone();
-			},
-			false =>{
-				println!("Request Error");
-			},
-		}
-		log_request_info.push_str(&col_read);	
-
-
-		// get remaining request info
-		// get the parameter of the request
 		let mut parameter = Vec::new();
 		let mut read_stream_info = String::new();		
 		while http_reader.read_line(&mut read_stream_info).unwrap()>0{
@@ -106,6 +92,7 @@ impl Request{
 
 
 		let command = http_info[0].to_owned();
+		let col_name = http_info[1].to_owned();
 
 		let file_source = http_info[0];					// source of the request file
 		stream = http_reader.into_inner();

@@ -26,14 +26,20 @@ impl RustDB {
         let mut cl = Collection::new(&fields);
         self.collections.insert(cl_name.to_owned(),cl);
         match self.collections.get_mut(cl_name){
-            Some(col) =>Ok(col),
+            Some(col) => {
+                println!("{:?}", col);
+                return Ok(col);
+            },
             None => Err("Database insert error"),
         }
     }
 
     fn find_cl(&mut self, cl_name: &str) -> Result<&mut Collection,&'static str>{
         match self.collections.get_mut(cl_name) {
-            Some(col) => Ok(col),
+            Some(col) => {
+                println!("{:?}", col);
+                return Ok(col);
+            },
             None => Err("Collection name does not exist."),
         }
     }
