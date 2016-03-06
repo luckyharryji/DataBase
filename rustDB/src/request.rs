@@ -161,12 +161,18 @@ impl Request{
 		let desired_attributes:Vec<&str> = self.request_parameter[1].trim().split(";").collect();
 		let mut obj_pair = HashMap::<String, String>::new();
 		for pair in obj_attributes.iter().clone(){
+			if pair.is_empty(){
+				break;
+			}
 			let key_value:Vec<&str> = pair.split_whitespace().collect();
 			obj_pair.insert(key_value[0].to_owned(), key_value[1].to_owned());			
 		}
 
 		let mut desire_pair = HashMap::<String, String>::new();
 		for pair in desired_attributes.iter().clone(){
+			if pair.is_empty(){
+				break;
+			}
 			let key_value:Vec<&str> = pair.split_whitespace().collect();
 			desire_pair.insert(key_value[0].to_owned(), key_value[1].to_owned());			
 		}
