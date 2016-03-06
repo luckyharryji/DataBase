@@ -34,7 +34,7 @@ impl RustDB {
         }
     }
 
-    fn find_cl(&mut self, cl_name: &str) -> Result<&mut Collection,&'static str>{
+    pub fn find_cl(&mut self, cl_name: &str) -> Result<&mut Collection,&'static str>{
         match self.collections.get_mut(cl_name) {
             Some(col) => {
                 println!("{:?}", col);

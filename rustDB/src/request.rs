@@ -11,8 +11,13 @@
 		Arguments: Key
 		Purpose: Delete an entry from the data store
 
-	Not Yet:
+		GETLIST
+		Arguments: Key
+		Purpose: Retrieve a stored list from the data store
 
+	On Going:
+
+	To Do:
 		PUT
 		Arguments: Key, Value
 		Purpose: Insert a new entry into the data store
@@ -20,10 +25,6 @@
 		GET
 		Arguments: Key
 		Purpose: Retrieve a stored value from the data store
-
-		GETLIST
-		Arguments: Key
-		Purpose: Retrieve a stored list from the data store
 
 		APPEND
 		Arguments: Key, Value

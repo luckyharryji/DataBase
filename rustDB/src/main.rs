@@ -35,6 +35,12 @@ fn handle_stream(stream:TcpStream,write_log_file: Arc<Mutex<OpenOptions>>, datab
 				Err(err) => println!("{}", err),
 			}
 		},
+		"GETLIST" => {
+			match on_database.find_cl(&request.get_collection()){
+				Ok(s) => println!("{:?}", s),
+				Err(err) => println!("{}", err),
+			}
+		},
 		_ => println!("Not Finish Yet"),
 	}
 	// request.record_log(&request_time,write_log_file);					   // write request info into log
