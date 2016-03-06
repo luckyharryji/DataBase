@@ -4,26 +4,41 @@
 	/**
 	Done:
 		PUTLIST
-		Arguments: Key Attribute
-		Purpose: Insert a new list entry into the data store
+		@Arguments:
+			PUTLIST CollectionName
+			Attributes1
+			Attributes2
+			...
+		@Purpose: Create a new collection in the database with the given attributes
 
 		DELETELIST
-		Arguments: Key
-		Purpose: Delete an entry from the data store
+		@Arguments: 
+			DELETELIST CollectionName
+		@Purpose: Delete an entry from the data store
 
 		GETLIST
-		Arguments: Key
-		Purpose: Retrieve a stored list from the data store
+		@Arguments:
+			GETLIST CollectionName
+		@Purpose: Retrieve content of the desired collection
+
+		APPEND
+		@Arguments: 
+			APPEND CollectionName
+			Key Value
+			...
+		@Purpose: Add an element to an existing list in the data store
+
+		UPDATE
+		@Arguments: 
+			UPDATE CollectionName
+			Key Value;Key Value;...	// parse condition
+			Key Value;...	//update value
+		@Purpose: Update existing item in the databse
 
 	On Going:
-		APPEND
-		Arguments: Key, Value
-		Purpose: Add an element to an existing list in the data store
+
 
 	To Do:
-		PUT
-		Arguments: Key, Value
-		Purpose: Insert a new entry into the data store
 
 		GET
 		Arguments: Key
@@ -138,6 +153,24 @@ impl Request{
 	pub fn get_parameters(&self) -> Set<String>{
 		let parameter_set: Set<String> = self.request_parameter.iter().cloned().collect();
 		parameter_set
+	}
+
+	// get object and desire for update
+	pub fn get_object_desired(&self) -> (HashMap<String, String>, HashMap<String, String>){
+		let obj_attributes:Vec<&str> = self.request_parameter[0].trim().split(";").collect();
+		let desired_attributes:Vec<&str> = self.request_parameter[1].trim().split(";").collect();
+		let mut obj_pair = HashMap::<String, String>::new();
+		for pair in obj_attributes.iter().clone(){
+			let key_value:Vec<&str> = pair.split_whitespace().collect();
+			obj_pair.insert(key_value[0].to_owned(), key_value[1].to_owned());			
+		}
+
+		let mut desire_pair = HashMap::<String, String>::new();
+		for pair in desired_attributes.iter().clone(){
+			let key_value:Vec<&str> = pair.split_whitespace().collect();
+			desire_pair.insert(key_value[0].to_owned(), key_value[1].to_owned());			
+		}
+		(obj_pair, desire_pair)
 	}
 
 	pub fn get_collection(&self) -> String{
