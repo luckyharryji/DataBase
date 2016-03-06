@@ -31,19 +31,18 @@
 		UPDATE
 		@Arguments: 
 			UPDATE CollectionName
-			Key Value;Key Value;...	// parse condition
-			Key Value;...	//update value
+			Key Value;Key Value;...;	// parse condition
+			Key Value;...;	//update value
 		@Purpose: Update existing item in the databse
 
-	On Going:
-
+		GET
+		@Arguments: 
+			GET CollectionName
+			Key Value
+			...
+		Purpose: Retrieve a stored value from the data Item
 
 	To Do:
-
-		GET
-		Arguments: Key
-		Purpose: Retrieve a stored value from the data store
-
 		APPEND
 		Arguments: Key, Value
 		Purpose: Add an element to an existing list in the data store
