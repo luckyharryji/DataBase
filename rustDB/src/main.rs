@@ -8,7 +8,7 @@ use std::convert::AsRef;
 
 
 extern crate time;  // import for record time for log
-pub mod lib;
+
 mod vecDBCollection;
 mod db_module;
 use db_module::RustDB;
@@ -16,20 +16,23 @@ mod response;
 
 mod request;
 use request::Request;
+pub mod lib;
 
+use lib::{read_db, store_in_disk};
 fn main() {
-	initial_bind_server(8080);
+    initial_bind_server(8080);
 }
 
 
 fn handle_stream(stream:TcpStream,write_log_file: Arc<Mutex<OpenOptions>>, database_obj:&mut Arc<Mutex<RustDB>>){
-	let request_time = time::now().ctime().to_string();    // record time when request come
-	let mut request = Request::new(stream);				   // parse the request, extract url and all requet info
-	request.is_valid();
-	let mut on_database = database_obj.lock().unwrap();
+    let request_time = time::now().ctime().to_string();    // record time when request come
+    let mut request = Request::new(stream);				   // parse the request, extract url and all requet info
+    request.is_valid();
+    let mut on_database = database_obj.lock().unwrap();
+
 	match request.get_command().as_ref(){
 		"PUTLIST" => {
-			let mut table = on_database.create_table(&request.get_collection(), &request.get_parameters());
+			let table = on_database.create_table(&request.get_collection(), &request.get_parameters());
 		},
 		"DELETELIST" => {
 			match on_database.delete_cl(&request.get_collection()){
@@ -87,6 +90,15 @@ fn handle_stream(stream:TcpStream,write_log_file: Arc<Mutex<OpenOptions>>, datab
 		},
 		_ => println!("Not a legel query method"),
 	}
+
+    // in-disk storage for database content
+    let json_for_storage: String = json::encode(&*on_database).unwrap();
+    println!("the items find are: {}", json_for_storage);
+    match store_in_disk(&json_for_storage) {
+        Ok(_) => println!("Query result store successful"),
+        _ => println!("Failed to store in disk"),
+    }
+
 	// request.record_log(&request_time,write_log_file);					   // write request info into log
 
 	// let mut response = request.get_response();			   // create response structure from request information
@@ -104,11 +116,19 @@ fn initial_bind_server(port:usize){
 
     // new database object initial here 
     // read data from in-disk
-    let new_database = Arc::new(Mutex::new(RustDB::new()));
+    let mut database = Arc::new(Mutex::new(RustDB::new()));
     let file_for_log = Arc::new(Mutex::new(OpenOptions::new()));
+
+    if let Ok(storage_string) = read_db(){
+        if storage_string.is_empty() == false{
+            let rust_db : RustDB = json::decode(&storage_string).unwrap();
+            database = Arc::new(Mutex::new(rust_db));
+        }
+    }
+
     for stream in listener.incoming() {
     	let log_file_for_write = file_for_log.clone();
-    	let mut database_obj = new_database.clone();
+    	let mut database_obj = database.clone();
 		match stream{
 			Ok(stream)=>{  				
 				thread::spawn(move || {  // spawn a thread for each request 

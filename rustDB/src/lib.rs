@@ -5,6 +5,34 @@ use std::io::prelude::*;
 use std::fs::OpenOptions;
 use std::sync::{Arc,Mutex};
 
+// read the content in the in-disk database
+pub fn read_db()->Result<String> {
+	let mut f = try!(OpenOptions::new()
+			.read(true)
+			.create(true)
+			.open("db.txt"));
+	let mut s = String::new();
+	match f.read_to_string(&mut s) {
+		Ok(_) => Ok(s),
+		Err(e) => Err(e),
+    }
+}
+
+pub fn store_in_disk(db_content: &str)->Result<()>{
+	let mut f = try!(OpenOptions::new()
+			.read(true)
+			.write(true)
+			.create(true)
+			.open("db.txt"));
+	let content = db_content.to_owned();
+	match f.write(content.as_bytes()){
+		Ok(_) => Ok(()),
+        Err(e) => {
+        	return Err(e);
+        },
+	}
+}
+
 // read the file from the http request source
 // for now. the type of the Reponse code is decided by the error returned by the File read.
 pub fn get_file_content(path: &Path)->Result<String> {
