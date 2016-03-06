@@ -1,3 +1,33 @@
+#[doc = "
+	
+	Accepted: parameter: 
+	/**
+		PUT
+		Arguments: Key, Value
+		Purpose: Insert a new entry into the data store
+
+		GET
+		Arguments: Key
+		Purpose: Retrieve a stored value from the data store
+
+		PUTLIST
+		Arguments: Key Attribute
+		Purpose: Insert a new list entry into the data store
+
+		GETLIST
+		Arguments: Key
+		Purpose: Retrieve a stored list from the data store
+
+		APPEND
+		Arguments: Key, Value
+		Purpose: Add an element to an existing list in the data store
+
+		DELETE
+		Arguments: Key
+		Purpose: Delete an entry from the data store
+	**/
+"]
+
 use std::net::TcpStream;
 use std::io::BufReader;
 use std::io::prelude::*;
@@ -6,6 +36,9 @@ use std::path::Path;
 use std::fs::OpenOptions;
 use std::sync::{Arc,Mutex};
 use std::convert::AsRef;
+
+use std::collections::{HashMap, BTreeSet};
+type Set<K> = BTreeSet<K>;
 
 use response::Response;
 use lib::{get_file_content,write_into_file};
@@ -16,6 +49,7 @@ pub struct Request{
 	stream: TcpStream,
 	command: String,
 	request_info: String,
+	request_collection: String,
 	request_parameter: Vec<String>,
 	not_find_page: String,
 }
@@ -41,37 +75,39 @@ impl Request{
 		}
 		log_request_info.push_str(&header);
 
-		let mut read_stream_info = String::new();
+
+		// get object collections
+		let mut col_name = String::new();
+		let mut col_read = String::new();
+		match http_reader.read_line(&mut col_read).unwrap()>0{
+			true=> {
+				col_name = col_read.clone();
+			},
+			false =>{
+				println!("Request Error");
+			},
+		}
+		log_request_info.push_str(&col_read);	
+
+
 		// get remaining request info
-		// while http_reader.read_line(&mut read_stream_info).unwrap()>0{
-		// 	if read_stream_info == "\r\n".to_owned(){   // since TcpStream is a long connection, have to jump out when 
-		// 		break;									// read to the last line \r\n , or it will stall the network connection
-		// 	}
-		// 	let record = read_stream_info.to_owned();
-		// 	log_request_info.push_str(&record);
-		// 	read_stream_info.clear();
-		// }
-
-		/*
-		parse the database manipulation type with the command type
-			PUT: update data item
-			POST: insert new value
-			GET: retrive the data item
-			DELETE: delete one item in database
-		*/
-		let command = http_info[0].to_owned();
-
 		// get the parameter of the request
 		let mut parameter = Vec::new();
-		for index in 1..http_info.len(){
-			parameter.push(http_info[index].to_owned());
+		let mut read_stream_info = String::new();		
+		while http_reader.read_line(&mut read_stream_info).unwrap()>0{
+			if read_stream_info == "\r\n".to_owned(){   // since TcpStream is a long connection, have to jump out when 
+				break;									// read to the last line \r\n , or it will stall the network connection
+			}
+			let record = read_stream_info.to_owned();
+			log_request_info.push_str(&record);
+			parameter.push(read_stream_info.clone());
+			read_stream_info.clear();
 		}
 
 
+		let command = http_info[0].to_owned();
 
-		println!("{}", parameter.len());
-
-		let file_source = http_info[1];					// source of the request file
+		let file_source = http_info[0];					// source of the request file
 		stream = http_reader.into_inner();
 		let mut file_addr = String::from("./");
 		file_addr.push_str(file_source);
@@ -81,6 +117,7 @@ impl Request{
 			stream: stream,
 			command: command,
 			request_info: log_request_info,
+			request_collection: col_name,
 			request_parameter: parameter,
 			not_find_page: ".//404.html".to_owned(),
 		}
@@ -102,45 +139,27 @@ impl Request{
 		self.process_url()
 	}
 
+	pub fn get_parameters(&self)->Set<String>{
+		let parameter_set: Set<String> = self.request_parameter.iter().cloned().collect();
+		parameter_set
+	}
+
+	pub fn get_collection(&self)->String{
+		self.request_collection.clone()
+	}
+
+	pub fn get_command(&self)->String{
+		self.command.clone()
+	}
+
 	
 	/**private function**/
-
-	/**
-	Accepted: parameter: 
-	PUT
-	Arguments: Key, Value
-	Purpose: Insert a new entry into the data store
-
-	GET
-	Arguments: Key
-	Purpose: Retrieve a stored value from the data store
-
-	PUTLIST
-	Arguments: Key, Value
-	Purpose: Insert a new list entry into the data store
-
-	GETLIST
-	Arguments: Key
-	Purpose: Retrieve a stored list from the data store
-
-	APPEND
-	Arguments: Key, Value
-	Purpose: Add an element to an existing list in the data store
-
-	DELETE
-	Arguments: Key
-	Purpose: Delete an entry from the data store
-	**/
-
 	pub fn is_valid(&self)->bool{
 		match self.command.as_ref(){
-		    "PUT" => println!("Call Database Update Function"),
-		    "POST" => println!("Call insert function"),
-		    "GET" => println!("Call find function"),
-		    "DELETE" => println!("Call delete function"),
-		    _ =>println!("Unsupported manipulation"),
+		    "PUTLIST" => self.request_parameter.len() == 1,
+		    "POST" => self.request_parameter.len() == 1,
+		    _ =>false,
 		}
-		true
 	}
 
 	// parse url in the reqeust

@@ -2,6 +2,8 @@ use std::net::{TcpListener,TcpStream};
 use std::thread;
 use std::sync::{Arc,Mutex};
 use std::fs::OpenOptions;
+use std::convert::AsRef;
+
 
 extern crate time;  // import for record time for log
 pub mod lib;
@@ -22,6 +24,13 @@ fn handle_stream(stream:TcpStream,write_log_file: &Arc<Mutex<OpenOptions>>, data
 	let request_time = time::now().ctime().to_string();    // record time when request come
 	let mut request = Request::new(stream);				   // parse the request, extract url and all requet info
 	request.is_valid();
+	let mut on_database = database_obj.lock().unwrap();
+	match request.get_command().as_ref(){
+		"PUTLIST" => {
+			let mut table = on_database.create_table(&request.get_collection(), &request.get_parameters());
+		},
+		_ => println!("Not Finish Yet"),
+	}
 	// request.record_log(&request_time,write_log_file);					   // write request info into log
 
 	// let mut response = request.get_response();			   // create response structure from request information

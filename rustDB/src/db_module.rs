@@ -19,7 +19,7 @@ impl RustDB {
         }
     }
 
-    fn create_table(&mut self, cl_name: &str, fields: &Set<String>)->Result<&mut Collection,&'static str>{
+    pub fn create_table(&mut self, cl_name: &str, fields: &Set<String>)->Result<&mut Collection,&'static str>{
         if self.collections.contains_key(cl_name){
             return Err("Collection name already exists.");
         }
