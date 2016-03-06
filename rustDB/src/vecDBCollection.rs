@@ -6,7 +6,7 @@ use std::fmt::{Display};
 pub type TableEntry = HashMap<String, String>;
 pub type Set<K> = BTreeSet<K>;
 
-#[derive(Debug)]
+#[derive(Debug, RustcDecodable, RustcEncodable)]
 pub struct ItemNode {
 	valid: bool,
 	content: TableEntry,
@@ -59,7 +59,7 @@ impl ItemNode {
 
 pub type EntryList = Vec<Box<ItemNode>>;
 
-#[derive(Debug)]
+#[derive(Debug, RustcDecodable, RustcEncodable)]
 pub struct Collection{
 	fields: Set<String>,
 	entries: EntryList,
@@ -73,7 +73,14 @@ impl Collection{
 		}
 	}
 
+	pub fn get_number_of_data(&self) -> usize{
+		self.entries.len()
+	}
+
 	fn is_valid(&self,  target: &TableEntry) -> bool {
+		for key in target.keys() {
+			println!("key is :{:?}", key);
+		}
 		for key in target.keys() {
     		if !self.fields.contains(key){
     			return false;
@@ -86,6 +93,9 @@ impl Collection{
 	pub fn insert(&mut self, desired: &TableEntry){
 		if self.is_valid(desired) {
 			self.entries.push(Box::new(ItemNode::new(desired)));
+		}
+		else{
+			println!("Invalid");
 		}
 	}
 

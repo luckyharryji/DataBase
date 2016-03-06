@@ -5,9 +5,12 @@ use std::result;
 use std::collections::{HashMap, BTreeSet};
 use vecDBCollection::Collection;
 
+use rustc_serialize::json;
+
 type Set<K> = BTreeSet<K>;
 type CollectionObj= HashMap<String,Collection>;
 
+#[derive(RustcDecodable, RustcEncodable)]
 pub struct RustDB {
     collections: CollectionObj,
 }
@@ -27,7 +30,9 @@ impl RustDB {
         self.collections.insert(cl_name.to_owned(),cl);
         match self.collections.get_mut(cl_name){
             Some(col) => {
-                println!("{:?}", col);
+                let json_data: String = json::encode(col).unwrap();
+                println!("data: {}", json_data);
+                // println!("{:?}", col);
                 return Ok(col);
             },
             None => Err("Database insert error"),
@@ -37,7 +42,9 @@ impl RustDB {
     pub fn find_cl(&mut self, cl_name: &str) -> Result<&mut Collection,&'static str>{
         match self.collections.get_mut(cl_name) {
             Some(col) => {
-                println!("{:?}", col);
+                let json_data: String = json::encode(col).unwrap();
+                println!("data: {}", json_data);
+                // println!("{:?}", col);
                 return Ok(col);
             },
             None => Err("Collection name does not exist."),

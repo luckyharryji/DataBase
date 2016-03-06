@@ -1,3 +1,5 @@
+extern crate rustc_serialize;
+use rustc_serialize::json;
 use std::net::{TcpListener,TcpStream};
 use std::thread;
 use std::sync::{Arc,Mutex};
@@ -38,6 +40,12 @@ fn handle_stream(stream:TcpStream,write_log_file: Arc<Mutex<OpenOptions>>, datab
 		"GETLIST" => {
 			match on_database.find_cl(&request.get_collection()){
 				Ok(s) => println!("{:?}", s),
+				Err(err) => println!("{}", err),
+			}
+		},
+		"APPEND" => {
+			match on_database.find_cl(&request.get_collection()){
+				Ok(s) => s.insert(&request.get_attributes()),
 				Err(err) => println!("{}", err),
 			}
 		},

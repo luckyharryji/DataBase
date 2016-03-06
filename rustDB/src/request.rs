@@ -16,6 +16,9 @@
 		Purpose: Retrieve a stored list from the data store
 
 	On Going:
+		APPEND
+		Arguments: Key, Value
+		Purpose: Add an element to an existing list in the data store
 
 	To Do:
 		PUT
@@ -40,6 +43,8 @@ use std::path::Path;
 use std::fs::OpenOptions;
 use std::sync::{Arc,Mutex};
 use std::convert::AsRef;
+
+use rustc_serialize::json;
 
 use std::collections::{HashMap, BTreeSet};
 type Set<K> = BTreeSet<K>;
@@ -88,7 +93,9 @@ impl Request{
 			}
 			let record = read_stream_info.to_owned();
 			log_request_info.push_str(&record);
-			parameter.push(read_stream_info.clone());
+
+			// remove \r, \n
+			parameter.push(read_stream_info.clone().trim().to_owned());
 			read_stream_info.clear();
 		}
 
@@ -124,26 +131,35 @@ impl Request{
 
 
 	// API to call for create response
-	pub fn get_response(&mut self)->Response{
+	pub fn get_response(&mut self) -> Response{
 		self.process_url()
 	}
 
-	pub fn get_parameters(&self)->Set<String>{
+	pub fn get_parameters(&self) -> Set<String>{
 		let parameter_set: Set<String> = self.request_parameter.iter().cloned().collect();
 		parameter_set
 	}
 
-	pub fn get_collection(&self)->String{
+	pub fn get_collection(&self) -> String{
 		self.request_collection.clone()
 	}
 
-	pub fn get_command(&self)->String{
+	pub fn get_command(&self) -> String{
 		self.command.clone()
+	}
+
+	pub fn get_attributes(&self) -> HashMap<String, String>{
+		let mut key_value_pair = HashMap::<String, String>::new();
+		for pair in self.request_parameter.iter().clone(){
+			let key_value:Vec<&str> = pair.split_whitespace().collect();
+			key_value_pair.insert(key_value[0].to_owned(), key_value[1].to_owned());
+		}
+		key_value_pair
 	}
 
 	
 	/**private function**/
-	pub fn is_valid(&self)->bool{
+	pub fn is_valid(&self) -> bool{
 		match self.command.as_ref(){
 		    "PUTLIST" => self.request_parameter.len() == 1,
 		    "POST" => self.request_parameter.len() == 1,
