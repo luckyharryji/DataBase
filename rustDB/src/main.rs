@@ -66,13 +66,26 @@ fn handle_stream(stream:TcpStream,write_log_file: Arc<Mutex<OpenOptions>>, datab
 							let json_data: String = json::encode(&items).unwrap();
 							println!("the items find are: {}", json_data);
 						},
-						None => println!("No existign items"),
+						None => println!("Illeagel query condition"),
 					}
 				},
 				Err(err) => println!("{}", err),
 			}
 		},
-		_ => println!("Not Finish Yet"),
+		"DELETE" => {
+			match on_database.find_cl(&request.get_collection()){
+				Ok(s) => {
+					match s.delete(&request.get_attributes()){
+						Some(number) => {
+							println!("there are {} number of data deleted", number);
+						},
+						None => println!("Illeagel query condition"),
+					}
+				},
+				Err(err) => println!("{}", err),
+			}
+		},
+		_ => println!("Not a legel query method"),
 	}
 	// request.record_log(&request_time,write_log_file);					   // write request info into log
 

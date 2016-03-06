@@ -2,7 +2,6 @@
 	
 	Accepted: parameter: 
 	/**
-	Done:
 		PUTLIST
 		@Arguments:
 			PUTLIST CollectionName
@@ -40,12 +39,14 @@
 			GET CollectionName
 			Key Value
 			...
-		Purpose: Retrieve a stored value from the data Item
+		Purpose: Retrieve stored value that has the queried key-value
 
-	To Do:
-		APPEND
-		Arguments: Key, Value
-		Purpose: Add an element to an existing list in the data store
+		DELETE
+		@Arguments: 
+			GET CollectionName
+			Key Value
+			...
+		Purpose: Deltte stored value that has the queried key-value
 	**/
 "]
 
