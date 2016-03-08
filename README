@@ -1,4 +1,4 @@
-## Rust Database 
+#Rust Database 
 
 ### expiremental coding for simple db in Rust
 
@@ -7,3 +7,15 @@
 - Key-value storage
 - in-memory to disk
 - network concurrency
+
+To Do:
+- Better No-Sql design
+
+Doing:
+- In-disk serilization with JSON
+- API integration
+
+Done:
+- Database API
+- Storage structure
+- Network Initial
