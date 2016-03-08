@@ -1,91 +1,151 @@
-use std::fs::OpenOptions;
-use std::sync::Arc;
-use std::borrow::Cow;
+extern crate rustc_serialize;
+use rustc_serialize::json;
+use std::net::{TcpListener,TcpStream};
 use std::thread;
+use std::sync::{Arc,Mutex};
+use std::fs::OpenOptions;
+use std::convert::AsRef;
 
+<<<<<<< HEAD
 pub mod linkedlist;
 mod vecDBCollection;
 mod listDBCollection;
+=======
+>>>>>>> 2a02913e14594bac99965fc53cf9917cd9a17de3
 
+extern crate time;  // import for record time for log
+
+mod vecDBCollection;
+mod db_module;
+use db_module::RustDB;
+mod response;
+
+mod request;
+use request::Request;
+pub mod lib;
+
+use lib::{read_db, store_in_disk};
 fn main() {
-    let mut db = RustDB::open("testdb").unwrap();
-    let rc = Arc::new(db);
-
-    let mut handles = vec![];
-    for i in 0..3 {
-        let mut db = rc.clone();
-        handles.push(thread::spawn(move || {
-            assert!(db.get("test").is_none());
-            db.put("test", "hello");
-            assert!(db.get("test").unwrap() == b"hello");
-            db.delete("test");
-            assert!(db.get("test").is_none());
-            println!("pass");
-        }));
-    }
-
-    for handle in handles {
-        handle.join();
-    }
+    initial_bind_server(8080);
 }
 
 
+fn handle_stream(stream:TcpStream,write_log_file: Arc<Mutex<OpenOptions>>, database_obj:&mut Arc<Mutex<RustDB>>){
+    let request_time = time::now().ctime().to_string();    // record time when request come
+    let mut request = Request::new(stream);				   // parse the request, extract url and all requet info
+    request.is_valid();
+    let mut on_database = database_obj.lock().unwrap();
 
-use std::fs;
-use std::collections::HashMap;
-use std::io;
-use std::io::Error;
-use std::path::{Path,PathBuf};
-use std::env;
-use std::sync::Mutex;
+	match request.get_command().as_ref(){
+		"PUTLIST" => {
+			let table = on_database.create_table(&request.get_collection(), &request.get_parameters());
+		},
+		"DELETELIST" => {
+			match on_database.delete_cl(&request.get_collection()){
+				Ok(s) => println!("{}" ,s),
+				Err(err) => println!("{}", err),
+			}
+		},
+		"GETLIST" => {
+			match on_database.find_cl(&request.get_collection()){
+				Ok(s) => println!("{:?}", s),
+				Err(err) => println!("{}", err),
+			}
+		},
+		"APPEND" => {
+			match on_database.find_cl(&request.get_collection()){
+				Ok(s) => s.insert(&request.get_attributes()),
+				Err(err) => println!("{}", err),
+			}
+		},
+		"UPDATE" => {
+			match on_database.find_cl(&request.get_collection()){
+				Ok(s) => {
+					let (object, desired) = request.get_object_desired();
+					s.update(&object, &desired);
+				},
+				Err(err) => println!("{}", err),
+			}
+		},
+		"GET" => {
+			match on_database.find_cl(&request.get_collection()){
+				Ok(s) => {
+					match s.find(&request.get_attributes()){
+						Some(items) => {
+							let json_data: String = json::encode(&items).unwrap();
+							println!("the items find are: {}", json_data);
+						},
+						None => println!("Illeagel query condition"),
+					}
+				},
+				Err(err) => println!("{}", err),
+			}
+		},
+		"DELETE" => {
+			match on_database.find_cl(&request.get_collection()){
+				Ok(s) => {
+					match s.delete(&request.get_attributes()){
+						Some(number) => {
+							println!("there are {} number of data deleted", number);
+						},
+						None => println!("Illeagel query condition"),
+					}
+				},
+				Err(err) => println!("{}", err),
+			}
+		},
+		_ => println!("Not a legel query method"),
+	}
 
-// key-value structure goes here
-type DatabaseCollection = HashMap<Vec<u8>, Vec<u8>>;
-type Records = Arc<Mutex<DatabaseCollection>>;
+    // in-disk storage for database content
+    let json_for_storage: String = json::encode(&*on_database).unwrap();
+    println!("the items find are: {}", json_for_storage);
+    match store_in_disk(&json_for_storage) {
+        Ok(_) => println!("Query result store successful"),
+        _ => println!("Failed to store in disk"),
+    }
 
-pub struct RustDB {
-    records: Records,
+	// request.record_log(&request_time,write_log_file);					   // write request info into log
+
+	// let mut response = request.get_response();			   // create response structure from request information
+	// let reponse_code = response.write_response();		   // send back response to the client
+	// let response_time = time::now().ctime().to_string();   // record time when send out response
+	// response.record_log(&response_time, reponse_code,write_log_file);     // write request info into log
 }
 
-// did not write physical disk load and storage yet
-impl RustDB{
-    pub fn open<P: AsRef<Path>>(path: P) -> Result<RustDB, Error> {
-        Self::check_path(path).and_then(Self::create_db)
-    }
 
-    fn create_db(path: PathBuf) -> Result<RustDB, Error> {
-        assert!(fs::metadata(path.as_path()).unwrap().is_dir());
-        let database = RustDB {
-            records: Arc::new(Mutex::new(
-                DatabaseCollection::new()
-            )),
-        };
-        Ok(database)
-    }
+fn initial_bind_server(port:usize){
+	// bing server to the localhost
+	let bind_addr:&str = &("127.0.0.1:".to_owned()+&port.to_string());
+    let listener = TcpListener::bind(bind_addr).unwrap();
+    println!("Server Started");
 
-    fn check_path<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
-        let mut buf = try!(env::current_dir());
-        buf = buf.join(path);
-        try!(fs::create_dir_all(buf.as_path()));
-        // leave retrive for later coding
-        Ok(buf)
-    }
+    // new database object initial here 
+    // read data from in-disk
+    let mut database = Arc::new(Mutex::new(RustDB::new()));
+    let file_for_log = Arc::new(Mutex::new(OpenOptions::new()));
 
-    pub fn get<K: Into<Vec<u8>>>(&self, key: K)->Option<Vec<u8>>{
-        let lock_data = self.records.lock().unwrap();
-        lock_data.get(&key.into()).map(|value| value.clone())
-    }
-
-    pub fn put<K: Into<Vec<u8>>, V: Into<Vec<u8>>>(&self, key: K, value: V){
-        let mut lock_to_write = self.records.lock().unwrap();
-        lock_to_write.insert(key.into(),value.into());
-    }
-
-    pub fn delete<K: Into<Vec<u8>>>(&self, key: K) -> Result<Vec<u8>, &'static str> {
-        let mut lock_to_delete = self.records.lock().unwrap();
-        match lock_to_delete.remove(&key.into()) {
-            Some(value) => return Ok(value),
-            None => return Err("Key does not exists"),
+    if let Ok(storage_string) = read_db(){
+        if storage_string.is_empty() == false{
+            let rust_db : RustDB = json::decode(&storage_string).unwrap();
+            database = Arc::new(Mutex::new(rust_db));
         }
     }
+
+    for stream in listener.incoming() {
+    	let log_file_for_write = file_for_log.clone();
+    	let mut database_obj = database.clone();
+		match stream{
+			Ok(stream)=>{  				
+				thread::spawn(move || {  // spawn a thread for each request 
+					handle_stream(stream,log_file_for_write,&mut database_obj);
+				});
+			},
+			Err(_)=>{
+				println!("Reques Stream Error");
+			}
+		}
+    }
+    // close server
+    drop(listener);
 }
