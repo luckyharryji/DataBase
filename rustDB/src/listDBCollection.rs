@@ -1,11 +1,15 @@
 use std::sync::{Arc,Mutex};
 use std::collections::{LinkedList,HashMap, BTreeSet};
+use std::sync::atomic::{AtomicPtr, Ordering};
 use std::thread;
-use std::fmt::{Display};
+
+
+use linkedlist::{Node, List};
 
 pub type TableEntry = HashMap<String, String>;
 pub type Set<K> = BTreeSet<K>;
 
+/*
 pub struct ItemNode {
 	valid: bool,
 	content: TableEntry,
@@ -56,9 +60,10 @@ impl ItemNode {
 		}
 	}
 }
+*/
 
-
-pub type EntryList = LinkedList<Arc<Mutex<Box<ItemNode>>>>;
+pub type NodePtr = Arc<AtomicPtr<Node<TableEntry>>>; 
+pub type EntryList = List<TableEntry>;
 
 
 pub struct Collection{
@@ -84,6 +89,39 @@ impl Collection{
 	}
 
 
+	fn find_tail(&self) -> Option<NodePtr> {
+
+		if let Some(head) = self.entries.get_head() {
+
+			let mut pre = head;
+			let mut cur: Option<NodePtr>;
+			loop{
+
+				if let Some(cur) = unsafe {(*pre.load(Ordering::Relaxed)).next()} {
+					pre = cur;
+				} else {
+					return Some(pre);
+				}
+			}
+			
+		}
+
+		None
+	}
+
+	pub fn insert(&mut self, desired: &TableEntry){
+			let node = Node::new(desired);
+
+			loop {
+
+				if let Some(tail) = self.find_tail(){
+
+				} else {
+					self.entries.head =
+				}
+
+			}
+	}
 
 
 	pub fn update(&mut self, target: &TableEntry, updated: &TableEntry) -> Option<usize>{
@@ -92,9 +130,9 @@ impl Collection{
 		} else {
 
 			let mut count = 0;
-			let mut it = self.entries.iter();
+/*			let mut it = self.entries.iter();
 			while let Some(ref item) = it.next() {
-				/*
+				
 				let peek = item.clone().into_inner().unwrap();
 				if peek.matched(target){
 					let shared_item = item.clone();
@@ -104,9 +142,9 @@ impl Collection{
 						count += 1;
 					}
 				}
-				*/
+				
 			}
-
+*/
 			Some(count)
 		}
 

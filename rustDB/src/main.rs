@@ -3,7 +3,9 @@ use std::sync::Arc;
 use std::borrow::Cow;
 use std::thread;
 
-mod dbCollection;
+pub mod linkedlist;
+mod vecDBCollection;
+mod listDBCollection;
 
 fn main() {
     let mut db = RustDB::open("testdb").unwrap();
