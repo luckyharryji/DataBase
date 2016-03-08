@@ -63,14 +63,16 @@ impl RustDB {
         }
     }
 
-    fn get_collections(&mut self) -> Vec<&str>{
+    pub fn get_collections(&mut self) -> Vec<&str>{
         let mut cls: Vec<&str> = Vec::new();
         for key in self.collections.keys(){
             cls.push(key);
         }
         cls
     }
-
+    pub fn show_cl(cl_name: &str) {
+        unimplemented!()
+    }
 }
 
 
