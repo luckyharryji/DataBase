@@ -109,15 +109,16 @@ impl Collection{
 		None
 	}
 
-	pub fn insert(&mut self, desired: &TableEntry){
+	pub fn insert(&mut self, desired: TableEntry){
 			let node = Node::new(desired);
 
 			loop {
 
 				if let Some(tail) = self.find_tail(){
+					tail.store()
 
 				} else {
-					self.entries.head =
+					self.entries.set_head(desired);
 				}
 
 			}

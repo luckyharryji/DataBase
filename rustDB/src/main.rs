@@ -6,16 +6,9 @@ use std::sync::{Arc,Mutex};
 use std::fs::OpenOptions;
 use std::convert::AsRef;
 
-<<<<<<< HEAD
-pub mod linkedlist;
-mod vecDBCollection;
-mod listDBCollection;
-=======
->>>>>>> 2a02913e14594bac99965fc53cf9917cd9a17de3
-
 extern crate time;  // import for record time for log
 
-mod vecDBCollection;
+mod vecParallelCollection;
 mod db_module;
 use db_module::RustDB;
 mod response;
