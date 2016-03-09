@@ -14,7 +14,7 @@ pub struct ItemNode {
 
 impl ItemNode {
 	pub fn new(entry: &TableEntry) -> Self {
-		ItemNode {
+		ItemNode{
 			valid: true,
 			content: entry.to_owned(),
 		}
@@ -23,7 +23,9 @@ impl ItemNode {
 	pub fn is_valid(&self) -> bool {
 		self.valid
 	}
-
+    pub fn get_content(&self) -> &TableEntry{
+		return &self.content;
+	}
 	pub fn set_valid(&mut self, set_value: bool){
 		self.valid = set_value;
 	}
@@ -72,7 +74,13 @@ impl Collection{
 			entries: EntryList::new()
 		}
 	}
+    pub fn get_fields(&self) -> &Set<String>{
+		return &self.fields;
+	}
 
+	pub fn get_entries(&self) -> &EntryList{
+		return &self.entries;
+	}
 	pub fn get_number_of_data(&self) -> usize{
 		self.entries.len()
 	}
@@ -105,7 +113,7 @@ impl Collection{
 			None
 		} else {
 			let mut count = 0;
-			
+
 			for item in self.entries.iter_mut(){
 				if (*item).matched(target) {
 					(*item).modify(desired);
@@ -122,7 +130,7 @@ impl Collection{
 		} else {
 
 			let mut res: Vec<TableEntry> = Vec::new();
-			
+
 			for item in &self.entries{
 				if item.matched(target) {
 					res.push(item.content.clone())
@@ -154,7 +162,6 @@ impl Collection{
 	}
 }
 
-
 impl PartialEq for Collection {
     fn eq(&self, other: &Self) -> bool {
 		for key in &other.fields {
@@ -183,7 +190,7 @@ mod itemnode_tests {
     	node.set_valid(false);
     	assert!(!node.is_valid());
     }
-        
+
     #[test]
     fn node_matches_test() {
 
@@ -195,7 +202,7 @@ mod itemnode_tests {
     	matched.remove(&String::from("age"));
     	assert!(node.matched(&matched));
 
-    	
+
     	let mut non_matched = new_table_entry(0, "Joey", 24);
     	assert!(!node.matched(&non_matched));
     	non_matched.insert("name".to_owned(), "Ada".to_owned());
@@ -212,7 +219,7 @@ mod itemnode_tests {
 
     	let mut matched = new_table_entry(0, "Ada", 24);
     	assert_eq!(node.content, matched);
-    	
+
     	let mut non_matched = new_table_entry(0, "Joey", 24);
     	node.modify(&non_matched);
     	assert_eq!(node.content, non_matched);
@@ -242,7 +249,7 @@ mod collection_tests {
     	clct.insert(&new_sort_entry(2, "Ross", 25));
     	assert_eq!(clct.entries.len(), 3);
     }
-        
+
     #[test]
     fn find_test() {
 
