@@ -70,8 +70,31 @@ impl RustDB {
         }
         cls
     }
-    pub fn show_cl(cl_name: &str) {
-        unimplemented!()
+    pub fn show_cl(&mut self, cl_name: &str) -> bool{
+        match self.find_cl(cl_name) {
+            Ok(cl) => {
+                println!("**************** Collection: {} ****************", cl_name);
+                for field in cl.get_fields().iter(){
+                    print!("{:?}", field);
+                    print!("           ");
+                }
+                print!("\n");
+                let item_list = cl.get_entries();
+                for item in item_list{
+                    for field in cl.get_fields().iter() {
+                        print!("{:?}", item.get_content().get(field));
+                        print!("           ");
+                    }
+                    print!("\n");
+                }
+                println!("**************** Collection: {} ****************", cl_name);
+                return true;
+            }
+            Err(e) => {
+                println!("{:?}", e);
+                return false;
+            },
+        }
     }
 }
 
