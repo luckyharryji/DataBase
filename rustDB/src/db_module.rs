@@ -2,15 +2,20 @@
   DB interface
 "]
 use std::result;
-use std::collections::{HashMap, BTreeSet};
-use vecDBCollection::Collection;
+use std::collections::{HashMap, BTreeSet,BTreeMap};
+use vecParallelCollection::Collection;
+use rustc_serialize::json::{self, Json, ToJson};
 
-use rustc_serialize::json;
+
 
 type Set<K> = BTreeSet<K>;
 type CollectionObj= HashMap<String,Collection>;
 
-#[derive(RustcDecodable, RustcEncodable)]
+pub struct JsonDB {
+    collections: BTreeMap<String, Json>,
+}
+
+
 pub struct RustDB {
     collections: CollectionObj,
 }
@@ -30,7 +35,9 @@ impl RustDB {
         self.collections.insert(cl_name.to_owned(),cl);
         match self.collections.get_mut(cl_name){
             Some(col) => {
-                let json_data: String = json::encode(col).unwrap();
+                //let json_data: String = json::encode(col).unwrap();
+
+                let json_data: String =  json::encode(&col.to_json()).unwrap();
                 println!("data: {}", json_data);
                 // println!("{:?}", col);
                 return Ok(col);
@@ -42,7 +49,9 @@ impl RustDB {
     pub fn find_cl(&mut self, cl_name: &str) -> Result<&mut Collection,&'static str>{
         match self.collections.get_mut(cl_name) {
             Some(col) => {
-                let json_data: String = json::encode(col).unwrap();
+                //let json_data: String = json::encode(col).unwrap();
+
+                let json_data: String = json::encode(&col.to_json()).unwrap();
                 println!("data: {}", json_data);
                 // println!("{:?}", col);
                 return Ok(col);
@@ -76,9 +85,22 @@ impl RustDB {
 }
 
 
+impl ToJson for RustDB {
+    fn to_json(&self) -> Json { 
+        let mut collection_obj = BTreeMap::new();
+        for (cname, clct) in &self.collections {
+            collection_obj.insert(cname.clone(), clct.to_json());
+        }
+
+        Json::Object(collection_obj)
+    }
+}
+
+
+
 mod database_test{
     use super::{RustDB,Set};
-    use vecDBCollection::{Collection,TableEntry};
+    use vecParallelCollection::{Collection,TableEntry};
 
     #[test]
     fn create_table_test(){
@@ -145,3 +167,5 @@ mod database_test{
         entry
     }
 }
+
+

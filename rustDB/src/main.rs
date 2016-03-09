@@ -1,5 +1,5 @@
 extern crate rustc_serialize;
-use rustc_serialize::json;
+use rustc_serialize::json::{self, Json,ToJson};
 use std::net::{TcpListener,TcpStream};
 use std::thread;
 use std::sync::{Arc,Mutex};
@@ -10,7 +10,7 @@ extern crate time;  // import for record time for log
 
 mod vecParallelCollection;
 mod db_module;
-use db_module::RustDB;
+use db_module::{RustDB, JsonDB};
 mod response;
 
 mod request;
@@ -91,7 +91,8 @@ fn handle_stream(stream:TcpStream,write_log_file: Arc<Mutex<OpenOptions>>, datab
 	}
 
     // in-disk storage for database content
-    let json_for_storage: String = json::encode(&*on_database).unwrap();
+    //let json_for_storage: String = json::encode(&*on_database).unwrap();
+    let json_for_storage: String = on_database.to_json().to_string().to_owned();
     println!("the items find are: {}", json_for_storage);
     match store_in_disk(&json_for_storage) {
         Ok(_) => println!("Query result store successful"),
@@ -120,7 +121,8 @@ fn initial_bind_server(port:usize){
 
     if let Ok(storage_string) = read_db(){
         if storage_string.is_empty() == false{
-            let rust_db : RustDB = json::decode(&storage_string).unwrap();
+            //let rust_db : RustDB = json::decode(&storage_string).unwrap();
+            let rust_db : JsonDB = json::decode(&storage_string).unwrap();
             database = Arc::new(Mutex::new(rust_db));
         }
     }

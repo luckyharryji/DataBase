@@ -1,11 +1,16 @@
-use std::sync::{Arc,Mutex, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 use std::collections::{LinkedList,HashMap, BTreeSet};
 use std::thread;
 use std::fmt::{Display};
 use std::sync::atomic::{AtomicPtr, Ordering};
+//extern crate rustc_serialize;
+use rustc_serialize::json::{self,Json,ToJson};
 
 pub type TableEntry = HashMap<String, String>;
 pub type Set<K> = BTreeSet<K>;
+
+
+
 
 #[derive(Debug, RustcDecodable, RustcEncodable)]
 pub struct ItemNode {
@@ -60,22 +65,23 @@ impl ItemNode {
 
 pub type EntryList = Vec<Arc<Mutex<Box<ItemNode>>>>;
 
-#[derive(Debug, RustcDecodable, RustcEncodable)]
+#[derive(Debug)]
 pub struct Collection{
 	fields: Set<String>,
 	entries: Arc<RwLock<EntryList>>,
 }
 
+
 impl Collection{
 	pub fn new(fields: &Set<String>) -> Self {
 		Collection {
 			fields: fields.to_owned(),
-			entries: Arc::new(Mutex::new(EntryList::new()))
+			entries: Arc::new(RwLock::new(EntryList::new()))
 		}
 	}
 
 	pub fn get_number_of_data(&self) -> usize{
-		self.entries.len()
+		self.entries.clone().read().unwrap().len()
 	}
 
 	fn is_valid(&self,  target: &TableEntry) -> bool {
@@ -96,7 +102,7 @@ impl Collection{
 
             let mut share_entries = self.entries.clone();
 
-			share_entries.write().unwrap().push(Arc::new(Mutex(Box::new(ItemNode::new(desired)))));
+			share_entries.write().unwrap().push(Arc::new(Mutex::new(Box::new(ItemNode::new(desired)))));
 		}
 		else{
 			println!("Invalid Insert Entry");
@@ -114,22 +120,24 @@ impl Collection{
 
             let share_entries = self.entries.clone().write().unwrap();
 
-            let n_item = self.entries.len();
+            let n_item = share_entries.len();
 
             for tid in 0..n_item{
-                let item = share_entries[i].clone();
+                let item = share_entries[tid].clone();
+                let target_clone = target.clone();
+                let desired_clone = desired.clone();
 
                 thread::spawn(move || {
 
                     let mut share_count = count_guard.clone();
                     let mut item = item.lock().unwrap();
 
-    				if (*item).matched(target) {
-    					(*item).modify(desired);
+    				if item.matched(&target_clone) {
+                        item.modify(&desired_clone);
 
     					*share_count.lock().unwrap() += 1;
     				}
-                })
+                });
 			}
 			Some(count)
 		}
@@ -146,20 +154,21 @@ impl Collection{
 
             let share_entries = self.entries.clone().read().unwrap();
 
-            let n_item = self.entries.len();
+            let n_item = share_entries.len();
 			
 			for tid in 0..n_item{
-                let item = share_entries[i].clone();
+                let item = share_entries[tid].clone();
+                let target_clone = target.clone();
 
                 thread::spawn(move || {
 
                     let mut res = res.clone();
                     let guard = item.lock().unwrap();
 
-                    if (*guard).matched(target) {
-                        res.lock().unwrap().push(gurad.content.clone())
-                    })
-                }
+                    if (*guard).matched(&target_clone) {
+                        res.lock().unwrap().push(guard.content.clone())
+                    }
+                });
 			}
 
 			Some(find_list)
@@ -192,6 +201,12 @@ impl Collection{
 }
 
 
+impl ToJson for Collection {
+    fn to_json(&self) -> Json { 
+        Json::String(format!(""))
+    }
+}
+
 impl PartialEq for Collection {
     fn eq(&self, other: &Self) -> bool {
 		for key in &other.fields {
@@ -209,7 +224,7 @@ impl PartialEq for Collection {
 }
 
 
-
+#[cfg(test)]
 mod itemnode_tests {
     use super::{ItemNode, TableEntry};
 
@@ -264,7 +279,7 @@ mod itemnode_tests {
     }
 }
 
-
+#[cfg(test)]
 mod collection_tests {
     use super::{Collection, ItemNode, TableEntry, Set};
 
@@ -274,10 +289,10 @@ mod collection_tests {
     	let mut clct = new_collection();
     	clct.insert(&new_sort_entry(0, "Ada", 24));
     	clct.insert(&new_sort_entry(1, "Joey", 25));
-    	assert_eq!(clct.entries.len(), 2);
+    	assert_eq!(clct.get_number_of_data(), 2);
 
     	clct.insert(&new_sort_entry(2, "Ross", 25));
-    	assert_eq!(clct.entries.len(), 3);
+    	assert_eq!(clct.get_number_of_data(), 3);
     }
         
     #[test]
@@ -366,3 +381,4 @@ mod collection_tests {
     	Collection::new(&set)
     }
 }
+
