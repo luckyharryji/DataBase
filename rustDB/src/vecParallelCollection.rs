@@ -1,3 +1,4 @@
+
 use std::sync::{Arc, Mutex, RwLock};
 use std::collections::{LinkedList,HashMap, BTreeSet};
 use std::thread;
@@ -81,7 +82,9 @@ impl Collection{
 	}
 
 	pub fn get_number_of_data(&self) -> usize{
-		self.entries.clone().read().unwrap().len()
+		let share_entries = self.entries.clone();
+        let guard = share_entries.read().unwrap();
+        guard.len().clone()
 	}
 
 	fn is_valid(&self,  target: &TableEntry) -> bool {
@@ -116,9 +119,9 @@ impl Collection{
 		} else {
 			let mut count = 0;
 
-            let count_guard = Arc::new(Mutex::new(count));
-
-            let share_entries = self.entries.clone().write().unwrap();
+            
+            let entries_ptr = self.entries.clone();
+            let mut share_entries = entries_ptr.write().unwrap();
 
             let n_item = share_entries.len();
 
@@ -126,6 +129,8 @@ impl Collection{
                 let item = share_entries[tid].clone();
                 let target_clone = target.clone();
                 let desired_clone = desired.clone();
+                let mut count_guard = Arc::new(Mutex::new(count));
+
 
                 thread::spawn(move || {
 
@@ -143,35 +148,42 @@ impl Collection{
 		}
 	}
 
-	pub fn find(&self, target: &TableEntry) -> Option<Vec<TableEntry>> {
+	pub fn find(&self, target: & TableEntry) ->  Option<Vec<TableEntry>> {
 		if !self.is_valid(target) {
 			None
 		} else {
 
             let mut find_list: Vec<TableEntry> = Vec::new();
 
-			let mut res: Arc<Mutex<Vec<TableEntry>>> = Arc::new(Mutex::new(find_list));
+			let mut res: Arc<RwLock<Vec<TableEntry>>> = Arc::new(RwLock::new(find_list));
 
-            let share_entries = self.entries.clone().read().unwrap();
+            let share_entries_ptr = self.entries.clone();
+            let share_entries = share_entries_ptr.read().unwrap();
 
             let n_item = share_entries.len();
 			
 			for tid in 0..n_item{
                 let item = share_entries[tid].clone();
                 let target_clone = target.clone();
-
+                let mut res = res.clone();
                 thread::spawn(move || {
 
-                    let mut res = res.clone();
+                    
                     let guard = item.lock().unwrap();
 
-                    if (*guard).matched(&target_clone) {
-                        res.lock().unwrap().push(guard.content.clone())
+                    if guard.matched(&target_clone) {
+                        let mut res = res.write().unwrap();
+                        res.push(guard.content.clone());
+                        println!("find 1 item:{}", res.len());
+
                     }
                 });
 			}
 
-			Some(find_list)
+            let res = res.clone();
+            let return_res = (*res.read().unwrap()).clone();
+            println!("Results: {}", return_res.len());
+			Some(return_res)
 		}
 	}
 
@@ -188,7 +200,9 @@ impl Collection{
             let mut shared_entries = shared_ptr.write().unwrap();
 
 			while index < shared_entries.len() {
-				if shared_entries[index].into_inner().unwrap().matched(target) {
+                let item_ptr = shared_entries[index].clone();
+                let item = item_ptr.lock().unwrap();
+				if item.matched(target) {
 					shared_entries.remove(index);
 					count += 1;
 				} else {
