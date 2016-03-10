@@ -1,11 +1,12 @@
 
 use std::sync::{Arc, Mutex, RwLock, Barrier};
-use std::collections::{LinkedList,HashMap, BTreeSet};
+use std::collections::{LinkedList,HashMap, BTreeSet, BTreeMap};
+// use std::collections::BTreeMap;
 use std::thread;
 use std::fmt::{Display};
 use std::sync::atomic::{AtomicPtr, Ordering};
 //extern crate rustc_serialize;
-use rustc_serialize::json::{self,Json,ToJson};
+// use rustc_serialize::json::{self,Json,ToJson};
 
 pub type TableEntry = HashMap<String, String>;
 pub type Set<K> = BTreeSet<K>;
@@ -66,11 +67,46 @@ impl ItemNode {
 
 pub type EntryList = Vec<Arc<Mutex<Box<ItemNode>>>>;
 
+// #[derive(Debug, RustcDecodable, RustcEncodable)]
 #[derive(Debug)]
 pub struct Collection{
     fields: Set<String>,
     entries: Arc<RwLock<EntryList>>,
 }
+
+// impl ToJson for Collection {
+//     fn to_json(&self) -> Json {
+//         Json::String(format!("test"))
+//         // let mut d = BTreeMap::new();
+//         // // All standard types implement `to_json()`, so use it
+//         // d.insert("fields".to_string(), json::encode(&self.fields));
+//         // // let mut lock_for_entries = self.entries.read().unwrap();
+//         // // let empty_vector = Vec::new();
+//         // // match self.get_all(){
+//         // //     None => d.insert("entries".to_string(), json::encode(&empty_vector)),
+//         // //     Some(list) => d.insert("entries".to_string(), json::encode(&list)),
+//         // // }
+//         // // d.insert("entries".to_string(), json::encode(&*lock_for_entries));
+//         // Json::Object(d)
+//     }
+// }
+
+impl PartialEq for Collection {
+    fn eq(&self, other: &Self) -> bool {
+        for key in &other.fields {
+            if !self.fields.contains(key){
+                return false;
+            }
+        }
+        for key in &self.fields {
+            if !other.fields.contains(key){
+                return false;
+            }
+        }
+        true
+    }
+}
+
 
 
 impl Collection{
@@ -230,28 +266,40 @@ impl Collection{
             Some(count)
         }
     }
-}
 
+    pub fn get_all(&self) ->  Option<Vec<TableEntry>> {
+        let mut find_list: Vec<TableEntry> = Vec::new();
 
-impl ToJson for Collection {
-    fn to_json(&self) -> Json { 
-        Json::String(format!(""))
-    }
-}
+        let mut res: Arc<RwLock<Vec<TableEntry>>> = Arc::new(RwLock::new(find_list));
 
-impl PartialEq for Collection {
-    fn eq(&self, other: &Self) -> bool {
-        for key in &other.fields {
-            if !self.fields.contains(key){
-                return false;
-            }
+        let share_entries_ptr = self.entries.clone();
+        let share_entries = share_entries_ptr.read().unwrap();
+
+        let n_item = share_entries.len();
+
+        let finished = Arc::new(Barrier::new(n_item.clone() + 1));
+        
+        for tid in 0..n_item{
+            let item = share_entries[tid].clone();
+            let mut res = res.clone();
+
+            let tid_finished = finished.clone();
+
+            thread::spawn(move || {                
+                let guard = item.lock().unwrap();
+                let mut res = res.write().unwrap();
+                res.push(guard.content.clone());
+                tid_finished.wait();
+            });
         }
-        for key in &self.fields {
-            if !other.fields.contains(key){
-                return false;
-            }
-        }
-        true
+
+
+        finished.clone().wait();
+
+        let res = res.clone();
+        let return_res = (*res.read().unwrap()).clone();
+
+        Some(return_res)
     }
 }
 

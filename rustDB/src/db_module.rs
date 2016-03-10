@@ -3,14 +3,14 @@
 "]
 use std::result;
 use std::collections::{HashMap, BTreeSet};
-use vecDBCollection::Collection;
-
-use rustc_serialize::json;
+// use vecDBCollection::Collection;
+use vecParallelCollection::Collection;
+// use rustc_serialize::json;
 
 type Set<K> = BTreeSet<K>;
 type CollectionObj= HashMap<String,Collection>;
 
-#[derive(RustcDecodable, RustcEncodable)]
+// #[derive(RustcDecodable, RustcEncodable)]
 pub struct RustDB {
     collections: CollectionObj,
 }
@@ -30,8 +30,8 @@ impl RustDB {
         self.collections.insert(cl_name.to_owned(),cl);
         match self.collections.get_mut(cl_name){
             Some(col) => {
-                let json_data: String = json::encode(col).unwrap();
-                println!("data: {}", json_data);
+                // let json_data: String = json::encode(col).unwrap();
+                // println!("data: {}", json_data);
                 // println!("{:?}", col);
                 return Ok(col);
             },
@@ -42,8 +42,8 @@ impl RustDB {
     pub fn find_cl(&mut self, cl_name: &str) -> Result<&mut Collection,&'static str>{
         match self.collections.get_mut(cl_name) {
             Some(col) => {
-                let json_data: String = json::encode(col).unwrap();
-                println!("data: {}", json_data);
+                // let json_data: String = json::encode(col).unwrap();
+                // println!("data: {}", json_data);
                 // println!("{:?}", col);
                 return Ok(col);
             },
@@ -76,7 +76,8 @@ impl RustDB {
 
 mod database_test{
     use super::{RustDB,Set};
-    use vecDBCollection::{Collection,TableEntry};
+    // use vecDBCollection::{Collection,TableEntry};
+    use vecParallelCollection::{Collection,TableEntry};
 
     #[test]
     fn create_table_test(){

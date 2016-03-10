@@ -9,7 +9,8 @@ use std::convert::AsRef;
 
 extern crate time;  // import for record time for log
 
-mod vecDBCollection;
+// mod vecDBCollection;
+mod vecParallelCollection;
 mod db_module;
 use db_module::RustDB;
 mod response;
@@ -66,8 +67,9 @@ fn handle_stream(stream:TcpStream,write_log_file: Arc<Mutex<OpenOptions>>, datab
 				Ok(s) => {
 					match s.find(&request.get_attributes()){
 						Some(items) => {
-							let json_data: String = json::encode(&items).unwrap();
-							println!("the items find are: {}", json_data);
+							// let json_data: String = json::encode(&items).unwrap();
+							// println!("the items find are: {}", json_data);
+                            println!("{:?}", items);
 						},
 						None => println!("Illeagel query condition"),
 					}
@@ -92,12 +94,12 @@ fn handle_stream(stream:TcpStream,write_log_file: Arc<Mutex<OpenOptions>>, datab
 	}
 
     // in-disk storage for database content
-    let json_for_storage: String = json::encode(&*on_database).unwrap();
-    println!("the items find are: {}", json_for_storage);
-    match store_in_disk(&json_for_storage) {
-        Ok(_) => println!("Query result store successful"),
-        _ => println!("Failed to store in disk"),
-    }
+    // let json_for_storage: String = json::encode(&*on_database).unwrap();
+    // println!("the items find are: {}", json_for_storage);
+    // match store_in_disk(&json_for_storage) {
+    //     Ok(_) => println!("Query result store successful"),
+    //     _ => println!("Failed to store in disk"),
+    // }
 
 	// request.record_log(&request_time,write_log_file);					   // write request info into log
 
@@ -119,12 +121,12 @@ fn initial_bind_server(port:usize){
     let mut database = Arc::new(Mutex::new(RustDB::new()));
     let file_for_log = Arc::new(Mutex::new(OpenOptions::new()));
 
-    if let Ok(storage_string) = read_db(){
-        if storage_string.is_empty() == false{
-            let rust_db : RustDB = json::decode(&storage_string).unwrap();
-            database = Arc::new(Mutex::new(rust_db));
-        }
-    }
+    // if let Ok(storage_string) = read_db(){
+    //     if storage_string.is_empty() == false{
+    //         let rust_db : RustDB = json::decode(&storage_string).unwrap();
+    //         database = Arc::new(Mutex::new(rust_db));
+    //     }
+    // }
 
     for stream in listener.incoming() {
     	let log_file_for_write = file_for_log.clone();
