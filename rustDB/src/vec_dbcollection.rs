@@ -1,6 +1,6 @@
 use std::collections::{HashMap, BTreeSet};
-use std::thread;
-use std::fmt::{Display};
+// use std::thread;
+// use std::fmt::{Display};
 
 pub type TableEntry = HashMap<String, String>;
 pub type Set<K> = BTreeSet<K>;
@@ -19,14 +19,21 @@ impl ItemNode {
         }
     }
 
+    #[allow(dead_code)]
     pub fn is_valid(&self) -> bool {
         self.valid
     }
 
+    pub fn get_content(&self) -> &TableEntry{
+        return &self.content;
+    }
+
+    #[allow(dead_code)]
     pub fn set_valid(&mut self, set_value: bool){
         self.valid = set_value;
     }
 
+    #[allow(dead_code)]
     pub fn update_field(&mut self, field_name: String, field_value: String) -> Result<(), &str>{
         if let Some(x) = self.content.get_mut(&field_name) {
             *x = field_value;
@@ -72,6 +79,7 @@ impl Collection{
         }
     }
 
+    #[allow(dead_code)]
     pub fn get_number_of_data(&self) -> usize{
         self.entries.len()
     }
@@ -86,6 +94,14 @@ impl Collection{
             }
         }
         return true;
+    }
+
+    pub fn get_fields(&self) -> &Set<String>{
+        return &self.fields;
+    }
+
+    pub fn get_entries(&self) -> &EntryList{
+        return &self.entries;
     }
 
 
@@ -174,6 +190,7 @@ impl PartialEq for Collection {
 
 
 mod itemnode_tests {
+    #[allow(unused_imports)]
     use super::{ItemNode, TableEntry};
 
     #[test]
@@ -218,6 +235,7 @@ mod itemnode_tests {
         assert_eq!(node.content, non_matched);
     }
 
+    #[allow(dead_code)]
     fn new_table_entry(id: usize, name: &str, age: usize) -> TableEntry{
         let mut entry = TableEntry::new();
         entry.insert("id".to_owned(), id.to_string());
@@ -229,6 +247,7 @@ mod itemnode_tests {
 
 
 mod collection_tests {
+    #[allow(unused_imports)]
     use super::{Collection, ItemNode, TableEntry, Set};
 
     #[test]
@@ -303,6 +322,7 @@ mod collection_tests {
         assert_eq!(clct.find(&target), Some(empty_vector));
     }
 
+    #[allow(dead_code)]
     fn new_sort_entry(id: usize, name: &str, age: usize) -> TableEntry{
         let mut entry = TableEntry::new();
         entry.insert("id".to_owned(), id.to_string());
@@ -311,7 +331,7 @@ mod collection_tests {
         entry
     }
 
-
+    #[allow(dead_code)]
     fn new_long_entry(id: usize, name: &str, age: usize, sex: &str) -> TableEntry{
         let mut entry = TableEntry::new();
         entry.insert("id".to_owned(), id.to_string());
@@ -321,6 +341,7 @@ mod collection_tests {
         entry
     }
 
+    #[allow(dead_code)]
     fn new_collection() -> Collection {
         let mut set: Set<String> = Set::new();
         set.insert("id".to_owned());

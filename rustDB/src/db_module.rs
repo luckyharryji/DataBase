@@ -1,12 +1,8 @@
 #[doc="
   DB interface
 "]
-use std::result;
 use std::collections::{HashMap, BTreeSet};
 use vec_dbcollection::Collection;
-
-use rustc_serialize::json;
-
 type Set<K> = BTreeSet<K>;
 type CollectionObj= HashMap<String,Collection>;
 
@@ -26,13 +22,10 @@ impl RustDB {
         if self.collections.contains_key(cl_name){
             return Err("Collection name already exists.");
         }
-        let mut cl = Collection::new(&fields);
+        let cl = Collection::new(&fields);
         self.collections.insert(cl_name.to_owned(),cl);
         match self.collections.get(cl_name){
             Some(col) => {
-                // let json_data: String = json::encode(col).unwrap();
-                // println!("data: {}", json_data);
-                // // println!("{:?}", col);
                 return Ok(col);
             },
             None => Err("Database insert error"),
@@ -42,9 +35,6 @@ impl RustDB {
     pub fn find_cl(&mut self, cl_name: &str) -> Result<&mut Collection,&'static str>{
         match self.collections.get_mut(cl_name) {
             Some(col) => {
-                let json_data: String = json::encode(col).unwrap();
-                println!("data: {}", json_data);
-                // println!("{:?}", col);
                 return Ok(col);
             },
             None => Err("Collection name does not exist."),
@@ -63,19 +53,62 @@ impl RustDB {
         }
     }
 
-    fn get_collections(&mut self) -> Vec<&str>{
-        let mut cls: Vec<&str> = Vec::new();
-        for key in self.collections.keys(){
-            cls.push(key);
+    // pub fn get_collections(&mut self) -> Vec<&str>{
+    //     let mut cls: Vec<&str> = Vec::new();
+    //     for key in self.collections.keys(){
+    //         cls.push(key);
+    //     }
+    //     cls
+    // }
+
+    pub fn find_cl_immute(&self, cl_name: &str) -> Result<&Collection,&'static str>{
+        match self.collections.get(cl_name) {
+            Some(col) => {
+                return Ok(col);
+            },
+            None => Err("Collection name does not exist."),
         }
-        cls
     }
 
+    pub fn show_db(&mut self){
+        for name in self.collections.keys(){
+            self.show_cl(name);
+        }
+    }
+
+    fn show_cl(&self, cl_name: &str){
+        match self.find_cl_immute(cl_name) {
+            Ok(cl) => {
+                println!("**************** Collection: {} ****************", cl_name);
+                for field in cl.get_fields().iter(){
+                    print!("{:?}", field);
+                    print!("           ");
+                }
+                print!("\n");
+                let item_list = cl.get_entries();
+                for item in item_list{
+                    for field in cl.get_fields().iter() {
+                        print!("{:?}", item.get_content().get(field));
+                        print!("           ");
+                    }
+                    print!("\n");
+                }
+                println!("\r\n");
+            }
+            Err(e) => {
+                println!("{:?}", e);
+                println!("\r\n");
+                // return false;
+            },
+        }
+    }
 }
 
 
 mod database_test{
+    #[allow(unused_imports)]
     use super::{RustDB,Set};
+    #[allow(unused_imports)]
     use vec_dbcollection::{Collection,TableEntry};
 
     #[test]
@@ -121,6 +154,7 @@ mod database_test{
         assert!(db.create_table("student",&student_fields).is_ok());
     }
 
+    #[allow(dead_code)]
     fn new_student_fields()->Set<String>{
         let mut fields: Set<String> = Set::new();
         fields.insert("id".to_owned());
@@ -128,6 +162,8 @@ mod database_test{
         fields.insert("age".to_owned());
         fields
     }
+
+    #[allow(dead_code)]
     fn new_other_fields()->Set<String>{
         let mut fields: Set<String> = Set::new();
         fields.insert("id".to_owned());
@@ -135,6 +171,7 @@ mod database_test{
         fields
     }
 
+    #[allow(dead_code)]
     fn new_sort_entry(id: usize, name: &str, age: usize) -> TableEntry{
         let mut entry = TableEntry::new();
         entry.insert("id".to_owned(), id.to_string());

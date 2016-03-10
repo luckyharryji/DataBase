@@ -19,6 +19,7 @@ use request::Request;
 pub mod lib;
 
 use lib::{read_db, store_in_disk};
+
 fn main() {
     initial_bind_server(8080);
 }
@@ -29,7 +30,6 @@ fn handle_stream(stream:TcpStream,write_log_file: Arc<Mutex<OpenOptions>>, datab
     let mut request = Request::new(stream);                // parse the request, extract url and all requet info
 
     let mut on_database = database_obj.lock().unwrap();
-
     let mut respone_info = String::new();
 
     match request.get_command().as_ref(){
@@ -116,6 +116,9 @@ fn handle_stream(stream:TcpStream,write_log_file: Arc<Mutex<OpenOptions>>, datab
                 },
                 Err(err) => respone_info = err.to_owned(),
             }
+        },
+        "SHOWDB" => {
+            on_database.show_db();
         },
         _ => {
             println!("Receive an illegel query method");
