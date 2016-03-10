@@ -57,35 +57,16 @@ pub fn write_into_file(http_content: &str, log_file_with_lock: &Arc<Mutex<OpenOp
     }
 }
 
-// return request information from status code
-pub fn get_status_info<'a>(code:usize)->&'a str{
-    match code{
-        200 => "OK",
-        400 => "Bad Request",
-        403 => "Forbidden",
-        404 => "Not Found",
-        _ => "Code Error",  // never call here
-    }
-}
 
 #[cfg(test)]
 mod lib_function_test {
 
-    use super::{get_file_content, write_into_file, get_status_info};
+    use super::{get_file_content, write_into_file};
     use std::fs::{File, OpenOptions, remove_file};
     use std::io::prelude::*;
     use std::io::SeekFrom;
     use std::path::Path;
     use std::sync::{Arc,Mutex};
-
-    #[test]
-    fn status_info_test(){
-        assert_eq!("OK", get_status_info(200));
-        assert_eq!("Bad Request", get_status_info(400));
-        assert_eq!("Forbidden", get_status_info(403));
-        assert_eq!("Not Found", get_status_info(404));      
-        assert_eq!("Code Error", get_status_info(100));
-    }
 
     #[test]
     fn get_file_content_test(){

@@ -3,7 +3,7 @@
 "]
 use std::result;
 use std::collections::{HashMap, BTreeSet};
-use vecDBCollection::Collection;
+use vec_dbcollection::Collection;
 
 use rustc_serialize::json;
 
@@ -22,17 +22,17 @@ impl RustDB {
         }
     }
 
-    pub fn create_table(&mut self, cl_name: &str, fields: &Set<String>)->Result<&mut Collection,&'static str>{
+    pub fn create_table(&mut self, cl_name: &str, fields: &Set<String>)->Result<&Collection,&'static str>{
         if self.collections.contains_key(cl_name){
             return Err("Collection name already exists.");
         }
         let mut cl = Collection::new(&fields);
         self.collections.insert(cl_name.to_owned(),cl);
-        match self.collections.get_mut(cl_name){
+        match self.collections.get(cl_name){
             Some(col) => {
-                let json_data: String = json::encode(col).unwrap();
-                println!("data: {}", json_data);
-                // println!("{:?}", col);
+                // let json_data: String = json::encode(col).unwrap();
+                // println!("data: {}", json_data);
+                // // println!("{:?}", col);
                 return Ok(col);
             },
             None => Err("Database insert error"),
@@ -76,7 +76,7 @@ impl RustDB {
 
 mod database_test{
     use super::{RustDB,Set};
-    use vecDBCollection::{Collection,TableEntry};
+    use vec_dbcollection::{Collection,TableEntry};
 
     #[test]
     fn create_table_test(){

@@ -1,5 +1,4 @@
-use std::sync::{Arc,Mutex};
-use std::collections::{LinkedList,HashMap, BTreeSet};
+use std::collections::{HashMap, BTreeSet};
 use std::thread;
 use std::fmt::{Display};
 
@@ -90,12 +89,13 @@ impl Collection{
     }
 
 
-    pub fn insert(&mut self, desired: &TableEntry){
+    pub fn insert(&mut self, desired: &TableEntry) -> Result<&'static str, &'static str>{
         if self.is_valid(desired) {
             self.entries.push(Box::new(ItemNode::new(desired)));
+            return Ok("Insert Success");
         }
         else{
-            println!("Invalid");
+            return Err("Format Invalid");
         }
     }
 

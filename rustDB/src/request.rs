@@ -53,29 +53,21 @@
 use std::net::TcpStream;
 use std::io::BufReader;
 use std::io::prelude::*;
-use std::io::ErrorKind;
-use std::path::Path;
 use std::fs::OpenOptions;
 use std::sync::{Arc,Mutex};
-use std::convert::AsRef;
-
-use rustc_serialize::json;
-
 use std::collections::{HashMap, BTreeSet};
 type Set<K> = BTreeSet<K>;
 
 use response::Response;
-use lib::{get_file_content,write_into_file};
+use lib::write_into_file;
 
 // defind request structure
 pub struct Request{
-    url: String,
     stream: TcpStream,
     command: String,
     request_info: String,
     request_collection: String,
     request_parameter: Vec<String>,
-    not_find_page: String,
 }
 
 
@@ -86,19 +78,17 @@ impl Request{
         
         let mut header = String::new();
         let mut http_info = Vec::<&str>::new();
-        
-        // first get the request file from first line of the stream
+        // parse query type and objective function from first line
         match http_reader.read_line(&mut header).unwrap()>0{
             true=> {
-                print!("info is: {}",header);
                 http_info= header.split_whitespace().collect();
             },
             false =>{
                 println!("Request Error");
             },
         }
-        log_request_info.push_str(&header);
 
+        log_request_info.push_str(&header);   // record info for log
 
         let mut parameter = Vec::new();
         let mut read_stream_info = String::new();       
@@ -108,29 +98,22 @@ impl Request{
             }
             let record = read_stream_info.to_owned();
             log_request_info.push_str(&record);
-
-            // remove \r, \n
+            // remove \r, \n with trim()
             parameter.push(read_stream_info.clone().trim().to_owned());
             read_stream_info.clear();
         }
 
-
         let command = http_info[0].to_owned();
         let col_name = http_info[1].to_owned();
 
-        let file_source = http_info[0];                 // source of the request file
         stream = http_reader.into_inner();
-        let mut file_addr = String::from("./");
-        file_addr.push_str(file_source);
 
         Request{
-            url: file_addr,
             stream: stream,
             command: command,
             request_info: log_request_info,
             request_collection: col_name,
             request_parameter: parameter,
-            not_find_page: ".//404.html".to_owned(),
         }
     }
 
@@ -142,12 +125,6 @@ impl Request{
             Err(_)=>println!("Failed to record request logs"),
             Ok(_) => println!("Request Log Recorded"),
         }
-    }
-
-
-    // API to call for create response
-    pub fn get_response(&mut self) -> Response{
-        self.process_url()
     }
 
     pub fn get_parameters(&self) -> Set<String>{
@@ -196,82 +173,8 @@ impl Request{
         key_value_pair
     }
 
-    
-    /**private function**/
-    pub fn is_valid(&self) -> bool{
-        match self.command.as_ref(){
-            "PUTLIST" => self.request_parameter.len() == 1,
-            "POST" => self.request_parameter.len() == 1,
-            _ =>false,
-        }
-    }
-
-    // parse url in the reqeust
-    // end with / means it could request for content inside a folder
-    fn process_url(&mut self)->Response{
-        match self.url.ends_with("/"){
-            true => return self.parse_dir(),
-            false => return self.parse_file(),
-        }
-    }
-
-    // process if request for folder
-    fn parse_dir(&mut self)->Response{
-        let file_name = vec!["index.html", "index.shtml", "index.txt"];
-        let origin_url = self.url.clone();
-        for file in &file_name{
-            let mut source_addr = origin_url.to_owned();
-            source_addr.push_str(file);
-
-            if let Ok(s) = get_file_content(&Path::new(&source_addr)){
-                self.url = source_addr;
-                return self.form_response(200, Some(s));
-            }
-        }
-        match get_file_content(&Path::new(&self.not_find_page)){
-            Err(_)=>return self.form_response(404, None),
-            Ok(s)=>return self.form_response(404,Some(s)),
-        }
-    }
-
-    // process when request for a file
-    fn parse_file(&self)->Response{
-        match get_file_content(&Path::new(&self.url)){
-            Err(meg) => {
-                match meg.kind(){
-                    ErrorKind::NotFound => {
-                        match get_file_content(&Path::new(&self.not_find_page)){
-                            Err(_)=>self.form_response(404, None),
-                            Ok(s)=>self.form_response(404,Some(s)),
-                        }
-                    },
-                    ErrorKind::PermissionDenied => self.form_response(403, None),
-                    _ => self.form_response(400, None),
-                }
-            },
-            Ok(s)=>self.form_response(200, Some(s)),
-        }
-    }
-
     // create a response from here 
-    // Only have conten-type when get a file with code 200
-    fn form_response(&self, code:usize,content:Option<String>)->Response{
-        let response_file_type = match code{
-            200=>{
-                match self.url.ends_with(".html"){
-                    true => Some("html".to_owned()),
-                    false => Some("plain".to_owned()),
-                }
-            },
-            404=>Some("html".to_owned()),
-            _ => None,
-        };
-        match content{
-            Some(content) => {
-                let length_of_content = content.len();
-                return Response::new(code, Some(length_of_content), Some(content), response_file_type, &self.stream); // xiangyu: rewrite to decide type
-            },
-            None => Response::new(code, None, None, response_file_type, &self.stream),
-        }
+    pub fn form_response(&self, content:Option<String>)->Response{
+        Response::new(content, &self.stream)
     }
 }
