@@ -1,21 +1,20 @@
-#Rust Database 
+# Rust Database 
 
 ### expiremental coding for simple db in Rust
+This is a No-SQL like Database implementated with Rust
 
-#####Road Map:
+Support function: 
 - Io
 - Key-value storage
-- in-memory to disk
-- network concurrency
-
-To Do:
-- Better No-Sql design
-
-Doing:
+- In-memory to disk
+- Network concurrency
+- Fine-grained lock in data item
+- Concurrency request and response handling
 - In-disk serilization with JSON
-- API integration
+- API integration with HTTP request
 
-Done:
+Receive pull request:
 - Database API
 - Storage structure
+- Lock free design
 - Network Initial
