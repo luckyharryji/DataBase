@@ -88,7 +88,7 @@ impl RustDB {
                 let item_list = cl.get_entries();
                 for item in item_list{
                     for field in cl.get_fields().iter() {
-                        print!("{:?}", item.get_content().get(field));
+                        print!("{:?}", item.get_content().get(field).unwrap());
                         print!("           ");
                     }
                     print!("\n");
